@@ -1,0 +1,4 @@
+MNIST/*
+data/*
+*.zip
+*.pyc

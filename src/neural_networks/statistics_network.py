@@ -1,0 +1,86 @@
+import torch.nn as nn
+import torch
+from src.neural_networks.encoder import BaseEncoder
+
+
+def tile_and_concat(tensor, vector):
+    B, C, H, W = tensor.size()
+    vector = vector.unsqueeze(2).unsqueeze(2)
+    expanded_vector = vector.expand((B, vector.size(1), H, W))
+    return torch.cat([tensor, expanded_vector], dim=1)
+
+
+class LocalStatisticsNetwork(nn.Module):
+    def __init__(self, img_feature_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels=img_feature_channels, out_channels=512, kernel_size=1, stride=1
+        )
+        self.conv2 = nn.Conv2d(
+            in_channels=512, out_channels=512, kernel_size=1, stride=1
+        )
+        self.conv3 = nn.Conv2d(in_channels=512, out_channels=1, kernel_size=1, stride=1)
+        self.relu = nn.ReLU()
+
+    def forward(self, concat_feature):
+        x = self.conv1(concat_feature)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        local_statistics = self.conv3(x)
+        return local_statistics
+
+
+class GlobalStatisticsNetwork(nn.Module):
+    def __init__(self, feature_map_size, feature_map_channels, latent_dim):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.dense1 = nn.Linear(
+            in_features=(feature_map_size ** 2 * feature_map_channels) + latent_dim,
+            out_features=512,
+        )
+        self.dense2 = nn.Linear(in_features=512, out_features=512)
+        self.dense3 = nn.Linear(in_features=512, out_features=1)
+        self.relu = nn.ReLU()
+
+    def forward(self, feature_map, representation):
+        feature_map = self.flatten(feature_map)
+        x = torch.cat([feature_map, representation], dim=1)
+        x = self.dense1(x)
+        x = self.relu(x)
+        x = self.dense2(x)
+        x = self.relu(x)
+        global_statistics = self.dense3(x)
+
+        return global_statistics
+
+
+if __name__ == "__main__":
+
+    img_size = 128
+    x = torch.zeros((64, 3, img_size, img_size))
+    enc_sh = BaseEncoder(
+        img_size=img_size, in_channels=3, num_filters=16, kernel_size=1, repr_dim=64
+    )
+    enc_ex = BaseEncoder(
+        img_size=img_size,
+        in_channels=3,
+        num_filters=16,
+        kernel_size=1,
+        repr_dim=64,
+    )
+
+    sh_repr, sh_feature = enc_sh(x)
+    ex_repr, ex_feature = enc_ex(x)
+    merge_repr = torch.cat([sh_repr, ex_repr], dim=1)
+    merge_feature = torch.cat([sh_feature, ex_feature], dim=1)
+    concat_repr = tile_and_concat(tensor=merge_feature, vector=merge_repr)
+    t_loc = LocalStatisticsNetwork(img_feature_channels=concat_repr.size(1))
+    t_glob = GlobalStatisticsNetwork(
+        feature_map_size=merge_feature.size(2),
+        feature_map_channels=merge_feature.size(1),
+        latent_dim=merge_repr.size(1),
+    )
+    print(t_glob(feature_map=merge_feature, representation=merge_repr).shape)
+    # print(b[0])
+    # # print(b[0].shape)
