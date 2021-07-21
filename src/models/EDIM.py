@@ -6,83 +6,112 @@ from src.neural_networks.statistics_network import (
     GlobalStatisticsNetwork,
     tile_and_concat,
 )
-from src.utils.custom_typing import SDIMOutputs
+from src.neural_networks.gan import Discriminator
+from src.utils.custom_typing import EDIMOutputs
 from src.neural_networks.classifier import Classifier
 from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
 
 
-class SDIM(nn.Module):
-    def __init__(self, img_size, channels, shared_dim, switched):
+class EDIM(nn.Module):
+    def __init__(
+        self,
+        img_size,
+        channels,
+        shared_dim,
+        exclusive_dim,
+        trained_encoder_x,
+        trained_encoder_y,
+    ):
         super().__init__()
 
         self.img_size = img_size
         self.channels = channels
         self.shared_dim = shared_dim
-        self.switched = switched
+        self.exclusive_dim = exclusive_dim
 
         self.img_feature_size = 4
         self.img_feature_channels = 256
 
         # Encoders
-        self.sh_enc_x = BaseEncoder(
+        self.sh_enc_x = trained_encoder_x
+
+        self.sh_enc_y = trained_encoder_y
+
+        self.ex_enc_x = BaseEncoder(
             img_size=img_size,
             in_channels=channels,
             num_filters=64,
             kernel_size=4,
-            repr_dim=shared_dim,
+            repr_dim=exclusive_dim,
         )
 
-        self.sh_enc_y = BaseEncoder(
+        self.ex_enc_y = BaseEncoder(
             img_size=img_size,
             in_channels=channels,
             num_filters=64,
             kernel_size=4,
-            repr_dim=shared_dim,
+            repr_dim=exclusive_dim,
         )
         # Local statistics network
         self.local_stat_x = LocalStatisticsNetwork(
-            img_feature_channels=self.img_feature_channels + self.shared_dim
+            img_feature_channels=self.img_feature_channels
+            + self.shared_dim
+            + self.exclusive_dim
         )
 
         self.local_stat_y = LocalStatisticsNetwork(
-            img_feature_channels=self.img_feature_channels + self.shared_dim
+            img_feature_channels=self.img_feature_channels
+            + self.shared_dim
+            + self.exclusive_dim
         )
 
         # Global statistics network
         self.global_stat_x = GlobalStatisticsNetwork(
             feature_map_size=self.img_feature_size,
             feature_map_channels=self.img_feature_channels,
-            latent_dim=self.shared_dim,
+            latent_dim=self.shared_dim + self.exclusive_dim,
         )
 
         self.global_stat_y = GlobalStatisticsNetwork(
             feature_map_size=self.img_feature_size,
             feature_map_channels=self.img_feature_channels,
-            latent_dim=self.shared_dim,
+            latent_dim=self.shared_dim + self.exclusive_dim,
         )
 
+        # Gan discriminator (disentangling network)
+
+        self.discriminator_x = Discriminator(
+            shared_dim=shared_dim, exclusive_dim=exclusive_dim
+        )
+
+        self.discriminator_y = Discriminator(
+            shared_dim=shared_dim, exclusive_dim=exclusive_dim
+        )
         # Metric nets
-        self.digit_classifier = Classifier(feature_dim=shared_dim, output_dim=10)
+        self.digit_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=10)
+        self.digit_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=10)
         self.color_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
         self.color_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
 
     def forward(self, x, y):
 
         # Get the shared and exclusive features from x and y
-        shared_x, M_x = self.sh_enc_x(x)
-        shared_y, M_y = self.sh_enc_y(x)
+        shared_x, shared_M_x = self.sh_enc_x(x)
+        shared_y, shared_M_y = self.sh_enc_y(x)
+
+        exclusive_x, exclusive_M_x = self.ex_enc_x(x)
+        exclusive_y, exclusive_M_y = self.ex_enc_y(x)
+
+        # Concat exclusive and shared feature map
+        M_x = torch.cat([shared_M_x, exclusive_M_x], dim=1)
+        M_y = torch.cat([shared_M_y, exclusive_M_y], dim=1)
 
         # Shuffle M to create M'
         M_x_prime = torch.cat([M_x[1:], M_x[0].unsqueeze(0)], dim=0)
         M_y_prime = torch.cat([M_y[1:], M_y[0].unsqueeze(0)], dim=0)
 
-        # Tile the exclusive representations (R) of each image and get the cross representations
-        if self.switched:  # Shared representations are switched
-            R_x_y = shared_x
-            R_y_x = shared_y
-        else:  # Shared representations are not switched
-            R_x_y = shared_y
-            R_y_x = shared_x
+        R_x_y = torch.cat([shared_x, exclusive_y], dim=1)
+        R_y_x = torch.cat([shared_y, exclusive_x], dim=1)
 
         # Global mutual information estimation
         global_mutual_M_R_x = self.global_stat_x(M_x, R_y_x)
@@ -106,11 +135,26 @@ class SDIM(nn.Module):
         local_mutual_M_R_y = self.local_stat_y(concat_M_R_y)
         local_mutual_M_R_y_prime = self.local_stat_y(concat_M_R_y_prime)
 
-        digit_logits = self.digit_classifier(shared_x)
-        color_bg_logits = self.color_bg_classifier(shared_x)
-        color_fg_logits = self.color_fg_classifier(shared_x)
+        # Disentangling discriminator
 
-        return SDIMOutputs(
+        shared_x_prime = torch.cat([shared_x[1:], shared_x[0].unsqueeze(0)], axis=0)
+        shared_y_prime = torch.cat([shared_y[1:], shared_y[0].unsqueeze(0)], axis=0)
+
+        disentangling_information_x = self.discriminator_x(R_y_x)
+        disentangling_information_x_prime = self.discriminator_x(
+            torch.cat([shared_y_prime, exclusive_x], axis=1)
+        )
+        disentangling_information_y = self.discriminator_y(R_x_y)
+        disentangling_information_y_prime = self.discriminator_y(
+            torch.cat([shared_x_prime, exclusive_y], axis=1)
+        )
+
+        digit_bg_logits = self.digit_bg_classifier(exclusive_x)
+        digit_fg_logits = self.digit_fg_classifier(exclusive_y)
+        color_bg_logits = self.color_bg_classifier(exclusive_x)
+        color_fg_logits = self.color_fg_classifier(exclusive_y)
+
+        return EDIMOutputs(
             global_mutual_M_R_x=global_mutual_M_R_x,
             global_mutual_M_R_x_prime=global_mutual_M_R_x_prime,
             global_mutual_M_R_y=global_mutual_M_R_y,
@@ -119,7 +163,12 @@ class SDIM(nn.Module):
             local_mutual_M_R_x_prime=local_mutual_M_R_x_prime,
             local_mutual_M_R_y=local_mutual_M_R_y,
             local_mutual_M_R_y_prime=local_mutual_M_R_y_prime,
-            digit_logits=digit_logits,
+            disentangling_information_x=disentangling_information_x,
+            disentangling_information_x_prime=disentangling_information_x_prime,
+            disentangling_information_y=disentangling_information_y,
+            disentangling_information_y_prime=disentangling_information_y_prime,
+            digit_bg_logits=digit_bg_logits,
+            digit_fg_logits=digit_fg_logits,
             color_bg_logits=color_bg_logits,
             color_fg_logits=color_fg_logits,
             shared_x=shared_x,
@@ -130,7 +179,7 @@ class SDIM(nn.Module):
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
 
-    sdim = SDIM(img_size=28, channels=3, shared_dim=10, switched=True)
+    # sdim = SDIM(img_size=28, channels=3, shared_dim=10, switched=True)
     d = ColoredMNISTDataset(train=True)
     # import matplotlib.pyplot as plt
 
@@ -142,5 +191,4 @@ if __name__ == "__main__":
 
     train_dataloader = DataLoader(d, batch_size=3, shuffle=True)
     for elem in train_dataloader:
-        print(sdim(elem.fg, elem.bg))
-        a = input()
+        print(elem.bg, elem.fg)
