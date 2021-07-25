@@ -3,8 +3,8 @@ import torch
 
 
 class GanLossOutput(NamedTuple):
-    generator: torch.Tensor
     discriminator: torch.Tensor
+    generator: torch.Tensor
 
 
 class EncoderOutput(NamedTuple):
@@ -55,3 +55,34 @@ class EDIMOutputs(NamedTuple):
     color_fg_logits: torch.tensor
     shared_x: torch.tensor
     shared_y: torch.tensor
+
+
+class SDIMLosses(NamedTuple):
+    total_loss: torch.tensor
+    encoder_loss: torch.tensor
+    local_mutual_loss: torch.tensor
+    global_mutual_loss: torch.tensor
+    shared_loss: torch.tensor
+    digit_classif_loss: torch.tensor
+    color_bg_classif_loss: torch.tensor
+    color_fg_classif_loss: torch.tensor
+    digit_accuracy: torch.tensor
+    color_bg_accuracy: torch.tensor
+    color_fg_accuracy: torch.tensor
+
+
+class EDIMLosses(NamedTuple):
+    total_loss: torch.tensor
+    encoder_loss: torch.tensor
+    local_mutual_loss: torch.tensor
+    global_mutual_loss: torch.tensor
+    gan_loss_d: torch.tensor
+    gan_loss_g: torch.tensor
+    digit_bg_classif_loss: torch.tensor
+    digit_fg_classif_loss: torch.tensor
+    color_bg_classif_loss: torch.tensor
+    color_fg_classif_loss: torch.tensor
+    digit_bg_accuracy: torch.tensor
+    digit_fg_accuracy: torch.tensor
+    color_bg_accuracy: torch.tensor
+    color_fg_accuracy: torch.tensor

@@ -70,8 +70,7 @@ class SDIM(nn.Module):
 
         # Get the shared and exclusive features from x and y
         shared_x, M_x = self.sh_enc_x(x)
-        shared_y, M_y = self.sh_enc_y(x)
-
+        shared_y, M_y = self.sh_enc_y(y)
         # Shuffle M to create M'
         M_x_prime = torch.cat([M_x[1:], M_x[0].unsqueeze(0)], dim=0)
         M_y_prime = torch.cat([M_y[1:], M_y[0].unsqueeze(0)], dim=0)
@@ -88,8 +87,8 @@ class SDIM(nn.Module):
         global_mutual_M_R_x = self.global_stat_x(M_x, R_y_x)
         global_mutual_M_R_x_prime = self.global_stat_x(M_x_prime, R_y_x)
 
-        global_mutual_M_R_y = self.global_stat_x(M_y, R_x_y)
-        global_mutual_M_R_y_prime = self.global_stat_x(M_y_prime, R_x_y)
+        global_mutual_M_R_y = self.global_stat_y(M_y, R_x_y)
+        global_mutual_M_R_y_prime = self.global_stat_y(M_y_prime, R_x_y)
 
         # Merge the feature map with the shared representation
 
@@ -106,9 +105,10 @@ class SDIM(nn.Module):
         local_mutual_M_R_y = self.local_stat_y(concat_M_R_y)
         local_mutual_M_R_y_prime = self.local_stat_y(concat_M_R_y_prime)
 
-        digit_logits = self.digit_classifier(shared_x)
-        color_bg_logits = self.color_bg_classifier(shared_x)
-        color_fg_logits = self.color_fg_classifier(shared_x)
+        # Stop the gradient and compute classification task
+        digit_logits = self.digit_classifier(shared_x.detach())
+        color_bg_logits = self.color_bg_classifier(shared_x.detach())
+        color_fg_logits = self.color_fg_classifier(shared_x.detach())
 
         return SDIMOutputs(
             global_mutual_M_R_x=global_mutual_M_R_x,
@@ -132,15 +132,14 @@ if __name__ == "__main__":
 
     sdim = SDIM(img_size=28, channels=3, shared_dim=10, switched=True)
     d = ColoredMNISTDataset(train=True)
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
-    # fig, axs = plt.subplots(2)
-    # fig.suptitle("x, y")
-    # axs[0].imshow(d[0].fg.permute(1, 2, 0).numpy())
-    # axs[1].imshow(d[0].bg.permute(1, 2, 0).numpy())
-    # plt.savefig("pair.png")
+    for i in range(100):
+        fig, axs = plt.subplots(2)
+        fig.suptitle("x, y")
+        axs[0].imshow(d[0].fg.permute(1, 2, 0).numpy())
+        axs[1].imshow(d[0].bg.permute(1, 2, 0).numpy())
+        plt.savefig("pair.png")
+        a = input()
 
     train_dataloader = DataLoader(d, batch_size=3, shuffle=True)
-    for elem in train_dataloader:
-        print(sdim(elem.fg, elem.bg))
-        a = input()

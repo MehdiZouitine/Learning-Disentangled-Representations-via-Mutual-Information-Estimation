@@ -2,3 +2,4 @@ MNIST/*
 data/*
 *.zip
 *.pyc
+mlruns/*

@@ -26,22 +26,23 @@ class Classifier(nn.Module):
 
 if __name__ == "__main__":
     import torch
-    from src.models.encoder import SharedEncoder, ExclusiveEncoder
 
-    img_size = 128
-    x = torch.zeros((64, 3, img_size, img_size))
-    enc_sh = SharedEncoder(
-        img_size=img_size, in_channels=3, num_filters=16, kernel_size=1, shared_dim=64
-    )
-    enc_ex = ExclusiveEncoder(
-        img_size=img_size,
-        in_channels=3,
-        num_filters=16,
-        kernel_size=3,
-        exclusive_dim=64,
-    )
+    # from src..encoder import Bas
 
-    sh_repr, sh_feature = enc_sh(x)
-    ex_repr, ex_feature = enc_ex(x)
-    clf = Classifier(feature_dim=sh_repr.size(1), output_dim=10)
-    print(clf(sh_repr).shape)
+    # img_size = 128
+    # x = torch.zeros((64, 3, img_size, img_size))
+    # enc_sh = SharedEncoder(
+    #     img_size=img_size, in_channels=3, num_filters=16, kernel_size=1, shared_dim=64
+    # )
+    # enc_ex = ExclusiveEncoder(
+    #     img_size=img_size,
+    #     in_channels=3,
+    #     num_filters=16,
+    #     kernel_size=3,
+    #     exclusive_dim=64,
+    # )
+
+    # sh_repr, sh_feature = enc_sh(x)
+    # ex_repr, ex_feature = enc_ex(x)
+    # clf = Classifier(feature_dim=sh_repr.size(1), output_dim=10)
+    # print(clf(sh_repr).shape)

@@ -54,13 +54,13 @@ class EDIM(nn.Module):
         )
         # Local statistics network
         self.local_stat_x = LocalStatisticsNetwork(
-            img_feature_channels=self.img_feature_channels
+            img_feature_channels=2 * self.img_feature_channels
             + self.shared_dim
             + self.exclusive_dim
         )
 
         self.local_stat_y = LocalStatisticsNetwork(
-            img_feature_channels=self.img_feature_channels
+            img_feature_channels=2 * self.img_feature_channels
             + self.shared_dim
             + self.exclusive_dim
         )
@@ -68,13 +68,13 @@ class EDIM(nn.Module):
         # Global statistics network
         self.global_stat_x = GlobalStatisticsNetwork(
             feature_map_size=self.img_feature_size,
-            feature_map_channels=self.img_feature_channels,
+            feature_map_channels=2 * self.img_feature_channels,
             latent_dim=self.shared_dim + self.exclusive_dim,
         )
 
         self.global_stat_y = GlobalStatisticsNetwork(
             feature_map_size=self.img_feature_size,
-            feature_map_channels=self.img_feature_channels,
+            feature_map_channels=2 * self.img_feature_channels,
             latent_dim=self.shared_dim + self.exclusive_dim,
         )
 
@@ -88,19 +88,22 @@ class EDIM(nn.Module):
             shared_dim=shared_dim, exclusive_dim=exclusive_dim
         )
         # Metric nets
-        self.digit_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=10)
-        self.digit_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=10)
-        self.color_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
-        self.color_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
+        self.digit_bg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=10)
+        self.digit_fg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=10)
+        self.color_bg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
+        self.color_fg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
 
     def forward(self, x, y):
 
         # Get the shared and exclusive features from x and y
         shared_x, shared_M_x = self.sh_enc_x(x)
-        shared_y, shared_M_y = self.sh_enc_y(x)
+        shared_y, shared_M_y = self.sh_enc_y(y)
+
+        # shared_x, shared_M_x = shared_x.detach(), shared_M_x.detach()
+        # shared_y, shared_M_y = shared_y.detach(), shared_M_y.detach()
 
         exclusive_x, exclusive_M_x = self.ex_enc_x(x)
-        exclusive_y, exclusive_M_y = self.ex_enc_y(x)
+        exclusive_y, exclusive_M_y = self.ex_enc_y(y)
 
         # Concat exclusive and shared feature map
         M_x = torch.cat([shared_M_x, exclusive_M_x], dim=1)
@@ -117,8 +120,8 @@ class EDIM(nn.Module):
         global_mutual_M_R_x = self.global_stat_x(M_x, R_y_x)
         global_mutual_M_R_x_prime = self.global_stat_x(M_x_prime, R_y_x)
 
-        global_mutual_M_R_y = self.global_stat_x(M_y, R_x_y)
-        global_mutual_M_R_y_prime = self.global_stat_x(M_y_prime, R_x_y)
+        global_mutual_M_R_y = self.global_stat_y(M_y, R_x_y)
+        global_mutual_M_R_y_prime = self.global_stat_y(M_y_prime, R_x_y)
 
         # Merge the feature map with the shared representation
 
@@ -149,10 +152,11 @@ class EDIM(nn.Module):
             torch.cat([shared_x_prime, exclusive_y], axis=1)
         )
 
-        digit_bg_logits = self.digit_bg_classifier(exclusive_x)
-        digit_fg_logits = self.digit_fg_classifier(exclusive_y)
-        color_bg_logits = self.color_bg_classifier(exclusive_x)
-        color_fg_logits = self.color_fg_classifier(exclusive_y)
+        # Stop the gradient and compute classification task
+        digit_bg_logits = self.digit_bg_classifier(exclusive_x.detach())
+        digit_fg_logits = self.digit_fg_classifier(exclusive_y.detach())
+        color_bg_logits = self.color_bg_classifier(exclusive_x.detach())
+        color_fg_logits = self.color_fg_classifier(exclusive_y.detach())
 
         return EDIMOutputs(
             global_mutual_M_R_x=global_mutual_M_R_x,

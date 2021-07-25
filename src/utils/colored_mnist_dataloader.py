@@ -1,6 +1,6 @@
 import torch
 from torchvision import datasets
-from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor, Compose, Normalize
 from torch.utils.data import Dataset
 import random
 import matplotlib.pyplot as plt
@@ -75,14 +75,14 @@ class ColoredMNISTDataset(Dataset):
     def __init__(self, train=True, data_folder="data") -> None:
         super().__init__()
         self.data = datasets.MNIST(
-            root="data", train=train, download=True, transform=ToTensor()
+            root=data_folder, train=train, download=True, transform=ToTensor()
         )
 
     def __getitem__(self, index):
         image, digit_label = self.data[index]
         # image /= 255
         rgb_color_bg, rgb_color_fg, bg_label, fg_label = self.get_random_colors()
-        bg_digit, fg_digit = self.create_colored_pairs(
+        fg_digit, bg_digit = self.create_colored_pairs(
             image=image.squeeze(0), rgb_color_bg=rgb_color_bg, rgb_color_fg=rgb_color_fg
         )
         fg_digit /= 255
@@ -91,8 +91,8 @@ class ColoredMNISTDataset(Dataset):
         bg_label = torch.tensor(bg_label, dtype=torch.float32)
         digit_label = torch.tensor(digit_label, dtype=torch.float32)
         return ColoredMNISTData(
-            fg=fg_digit,
             bg=bg_digit,
+            fg=fg_digit,
             fg_label=fg_label,
             bg_label=bg_label,
             digit_label=digit_label,
@@ -103,7 +103,10 @@ class ColoredMNISTDataset(Dataset):
 
 
 if __name__ == "__main__":
+    from tqdm import tqdm
 
-    d = ColoredMNISTLoader(train=True)
-    d[0]
-    train_dataloader = DataLoader(d, batch_size=3, shuffle=True)
+    dataset = ColoredMNISTDataset()
+    for i in tqdm(range(len(dataset))):
+        d = dataset[i]
+        print(d.digit_label, d.bg_label, d.fg_label)
+        a = input()
