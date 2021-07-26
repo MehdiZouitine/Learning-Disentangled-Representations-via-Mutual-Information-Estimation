@@ -36,7 +36,7 @@ class DJSLoss(nn.Module):
         return -mutual_info
 
 
-class GanLoss(nn.Module):
+class DiscriminatorLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
@@ -49,10 +49,19 @@ class GanLoss(nn.Module):
         )
         discriminator_loss = discriminator_real.mean() + discriminator_fake.mean()
 
+        return discriminator_loss
+
+
+class GeneratorLoss(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, fake_logits):
+
         generator_loss = F.binary_cross_entropy_with_logits(
             input=fake_logits, target=torch.ones_like(fake_logits)
         )
-        return GanLossOutput(discriminator=discriminator_loss, generator=generator_loss)
+        return generator_loss
 
 
 if __name__ == "__main__":

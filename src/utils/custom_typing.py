@@ -45,14 +45,6 @@ class EDIMOutputs(NamedTuple):
     local_mutual_M_R_x_prime: torch.tensor
     local_mutual_M_R_y: torch.tensor
     local_mutual_M_R_y_prime: torch.tensor
-    disentangling_information_x: torch.tensor
-    disentangling_information_x_prime: torch.tensor
-    disentangling_information_y: torch.tensor
-    disentangling_information_y_prime: torch.tensor
-    digit_bg_logits: torch.tensor
-    digit_fg_logits: torch.tensor
-    color_bg_logits: torch.tensor
-    color_fg_logits: torch.tensor
     shared_x: torch.tensor
     shared_y: torch.tensor
 
@@ -71,13 +63,15 @@ class SDIMLosses(NamedTuple):
     color_fg_accuracy: torch.tensor
 
 
-class EDIMLosses(NamedTuple):
-    total_loss: torch.tensor
+class GenLosses(NamedTuple):
     encoder_loss: torch.tensor
     local_mutual_loss: torch.tensor
     global_mutual_loss: torch.tensor
-    gan_loss_d: torch.tensor
     gan_loss_g: torch.tensor
+
+
+class ClassifLosses(NamedTuple):
+    classif_loss: torch.tensor
     digit_bg_classif_loss: torch.tensor
     digit_fg_classif_loss: torch.tensor
     color_bg_classif_loss: torch.tensor
@@ -86,3 +80,30 @@ class EDIMLosses(NamedTuple):
     digit_fg_accuracy: torch.tensor
     color_bg_accuracy: torch.tensor
     color_fg_accuracy: torch.tensor
+
+
+class DiscrLosses(NamedTuple):
+    gan_loss_d: torch.tensor
+
+
+class GeneratorOutputs(NamedTuple):
+    real_x: torch.tensor
+    fake_x: torch.tensor
+    real_y: torch.tensor
+    fake_y: torch.tensor
+    exclusive_x: torch.tensor
+    exclusive_y: torch.tensor
+
+
+class DiscriminatorOutputs(NamedTuple):
+    disentangling_information_x: torch.tensor
+    disentangling_information_x_prime: torch.tensor
+    disentangling_information_y: torch.tensor
+    disentangling_information_y_prime: torch.tensor
+
+
+class ClassifierOutputs(NamedTuple):
+    digit_bg_logits: torch.tensor
+    digit_fg_logits: torch.tensor
+    color_bg_logits: torch.tensor
+    color_fg_logits: torch.tensor

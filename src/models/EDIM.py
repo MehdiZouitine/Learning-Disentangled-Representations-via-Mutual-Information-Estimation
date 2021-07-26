@@ -7,7 +7,12 @@ from src.neural_networks.statistics_network import (
     tile_and_concat,
 )
 from src.neural_networks.gan import Discriminator
-from src.utils.custom_typing import EDIMOutputs
+from src.utils.custom_typing import (
+    EDIMOutputs,
+    GeneratorOutputs,
+    DiscriminatorOutputs,
+    ClassifierOutputs,
+)
 from src.neural_networks.classifier import Classifier
 from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
 
@@ -93,7 +98,7 @@ class EDIM(nn.Module):
         self.color_bg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
         self.color_fg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
 
-    def forward(self, x, y):
+    def forward_generator(self, x, y):
 
         # Get the shared and exclusive features from x and y
         shared_x, shared_M_x = self.sh_enc_x(x)
@@ -143,21 +148,6 @@ class EDIM(nn.Module):
         shared_x_prime = torch.cat([shared_x[1:], shared_x[0].unsqueeze(0)], axis=0)
         shared_y_prime = torch.cat([shared_y[1:], shared_y[0].unsqueeze(0)], axis=0)
 
-        disentangling_information_x = self.discriminator_x(R_y_x)
-        disentangling_information_x_prime = self.discriminator_x(
-            torch.cat([shared_y_prime, exclusive_x], axis=1)
-        )
-        disentangling_information_y = self.discriminator_y(R_x_y)
-        disentangling_information_y_prime = self.discriminator_y(
-            torch.cat([shared_x_prime, exclusive_y], axis=1)
-        )
-
-        # Stop the gradient and compute classification task
-        digit_bg_logits = self.digit_bg_classifier(exclusive_x.detach())
-        digit_fg_logits = self.digit_fg_classifier(exclusive_y.detach())
-        color_bg_logits = self.color_bg_classifier(exclusive_x.detach())
-        color_fg_logits = self.color_fg_classifier(exclusive_y.detach())
-
         return EDIMOutputs(
             global_mutual_M_R_x=global_mutual_M_R_x,
             global_mutual_M_R_x_prime=global_mutual_M_R_x_prime,
@@ -167,16 +157,42 @@ class EDIM(nn.Module):
             local_mutual_M_R_x_prime=local_mutual_M_R_x_prime,
             local_mutual_M_R_y=local_mutual_M_R_y,
             local_mutual_M_R_y_prime=local_mutual_M_R_y_prime,
+            shared_x=shared_x,
+            shared_y=shared_y,
+        ), GeneratorOutputs(
+            real_x=R_y_x,
+            real_y=R_x_y,
+            fake_x=torch.cat([shared_y_prime, exclusive_x], axis=1),
+            fake_y=torch.cat([shared_x_prime, exclusive_y], axis=1),
+            exclusive_x=exclusive_x,
+            exclusive_y=exclusive_y,
+        )
+
+    def forward_discriminator(self, gen_outputs: GeneratorOutputs):
+        out = gen_outputs
+        disentangling_information_x = self.discriminator_x(out.real_x)
+        disentangling_information_x_prime = self.discriminator_x(out.fake_x.detach())
+        disentangling_information_y = self.discriminator_y(out.real_y)
+        disentangling_information_y_prime = self.discriminator_y(out.fake_y.detach())
+        return DiscriminatorOutputs(
             disentangling_information_x=disentangling_information_x,
             disentangling_information_x_prime=disentangling_information_x_prime,
             disentangling_information_y=disentangling_information_y,
             disentangling_information_y_prime=disentangling_information_y_prime,
+        )
+
+    def forward_classifier(self, gen_outputs: GeneratorOutputs):
+        out = gen_outputs
+        digit_bg_logits = self.digit_bg_classifier(out.exclusive_x.detach())
+        digit_fg_logits = self.digit_fg_classifier(out.exclusive_y.detach())
+        color_bg_logits = self.color_bg_classifier(out.exclusive_x.detach())
+        color_fg_logits = self.color_fg_classifier(out.exclusive_y.detach())
+
+        return ClassifierOutputs(
             digit_bg_logits=digit_bg_logits,
             digit_fg_logits=digit_fg_logits,
             color_bg_logits=color_bg_logits,
             color_fg_logits=color_fg_logits,
-            shared_x=shared_x,
-            shared_y=shared_y,
         )
 
 

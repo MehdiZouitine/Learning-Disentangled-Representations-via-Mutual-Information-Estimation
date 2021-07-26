@@ -1,5 +1,6 @@
 import torch.optim as optim
 from src.models.EDIM import EDIM
+from src.utils.custom_typing import GeneratorOutputs, DiscriminatorOutputs, EDIMOutputs
 from src.losses.EDIM_loss import EDIMLoss
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
@@ -94,16 +95,37 @@ class EDIMTrainer:
         self.optimizer_bg_classifier.zero_grad()
         self.optimizer_fg_classifier.zero_grad()
 
-    def compute_gradient(
-        self, edim_outputs, digit_labels, color_bg_labels, color_fg_labels
-    ):
-        losses = self.loss(
+    def compute_gradient_gen(self, edim_outputs, discr_outputs):
+        losses = self.loss.compute_generator_loss(
             edim_outputs=edim_outputs,
+            discr_outputs=discr_outputs,
+        )
+        losses.encoder_loss.backward()
+        return losses
+
+    def compute_gradient_discr(
+        self,
+        discr_outputs,
+    ):
+        losses = self.loss.compute_discriminator_loss(discr_outputs=discr_outputs)
+        losses.gan_loss_d.backward(retain_graph=True)
+
+        return losses
+
+    def compute_gradient_classif(
+        self,
+        classif_outputs,
+        digit_labels,
+        color_bg_labels,
+        color_fg_labels,
+    ):
+        losses = self.loss.compute_classif_loss(
+            classif_outputs=classif_outputs,
             digit_labels=digit_labels,
             color_bg_labels=color_bg_labels,
-            color_fg_labels=color_fg_labels,
+            color_fg_labels=color_bg_labels,
         )
-        losses.total_loss.backward()
+        losses.classif_loss.backward()
         return losses
 
     def gradient_step(self):
@@ -138,19 +160,43 @@ class EDIMTrainer:
                 for idx, train_batch in enumerate(self.train_dataloader):
                     sample = train_batch
                     self.gradient_zero()
-                    edim_outputs = self.model(
+                    edim_outputs, gen_outputs = self.model.forward_generator(
                         x=sample.bg.to(self.device), y=sample.fg.to(self.device)
                     )
-                    losses = self.compute_gradient(
-                        edim_outputs=edim_outputs,
+
+                    discr_outputs = self.model.forward_discriminator(
+                        gen_outputs=gen_outputs
+                    )
+                    gen_losses = self.compute_gradient_gen(
+                        edim_outputs=edim_outputs, discr_outputs=discr_outputs
+                    )
+
+                    discr_losses = self.compute_gradient_discr(
+                        discr_outputs=discr_outputs
+                    )
+
+                    classif_outputs = self.model.forward_classifier(gen_outputs)
+                    classif_losses = self.compute_gradient_classif(
+                        classif_outputs=classif_outputs,
                         digit_labels=sample.digit_label.to(self.device),
                         color_bg_labels=sample.bg_label.to(self.device),
                         color_fg_labels=sample.fg_label.to(self.device),
                     )
+
                     self.gradient_step()
-                    dict_losses = losses._asdict()
+                    dict_gen_losses = gen_losses._asdict()
                     mlflow.log_metrics(
-                        {k: v.item() for k, v in dict_losses.items()}, step=log_step
+                        {k: v.item() for k, v in dict_gen_losses.items()}, step=log_step
+                    )
+                    dict_discr_losses = discr_losses._asdict()
+                    mlflow.log_metrics(
+                        {k: v.item() for k, v in dict_discr_losses.items()},
+                        step=log_step,
+                    )
+                    dict_classif_losses = classif_losses._asdict()
+                    mlflow.log_metrics(
+                        {k: v.item() for k, v in dict_classif_losses.items()},
+                        step=log_step,
                     )
                     log_step += 1
 

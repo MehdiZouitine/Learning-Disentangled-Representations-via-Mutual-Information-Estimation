@@ -1,6 +1,17 @@
 import torch.nn as nn
-from src.losses.loss_functions import DJSLoss, ClassifLoss, GanLoss
-from src.utils.custom_typing import EDIMLosses
+from src.losses.loss_functions import (
+    DJSLoss,
+    ClassifLoss,
+    DiscriminatorLoss,
+    GeneratorLoss,
+)
+from src.utils.custom_typing import (
+    DiscriminatorOutputs,
+    ClassifierOutputs,
+    GenLosses,
+    DiscrLosses,
+    ClassifLosses,
+)
 
 
 class EDIMLoss(nn.Module):
@@ -17,15 +28,10 @@ class EDIMLoss(nn.Module):
 
         self.djs_loss = DJSLoss()
         self.classif_loss = ClassifLoss()
-        self.gan_loss = GanLoss()
+        self.discriminator_loss = DiscriminatorLoss()
+        self.generator_loss = GeneratorLoss()
 
-    def __call__(
-        self,
-        edim_outputs,
-        digit_labels,
-        color_bg_labels,
-        color_fg_labels,
-    ):
+    def compute_generator_loss(self, edim_outputs, discr_outputs: DiscriminatorOutputs):
 
         # Compute Global mutual loss
         global_mutual_loss_x = self.djs_loss(
@@ -54,54 +60,72 @@ class EDIMLoss(nn.Module):
             local_mutual_loss_x + local_mutual_loss_y
         ) * self.local_mutual_loss_coeff
 
-        gan_loss_x_d, gan_loss_x_g = self.gan_loss(
-            real_logits=edim_outputs.disentangling_information_x_prime,
-            fake_logits=edim_outputs.disentangling_information_x,
+        gan_loss_x_g = self.generator_loss(
+            fake_logits=discr_outputs.disentangling_information_x
         )
-        gan_loss_y_d, gan_loss_y_g = self.gan_loss(
-            real_logits=edim_outputs.disentangling_information_y_prime,
-            fake_logits=edim_outputs.disentangling_information_y,
+        gan_loss_y_g = self.generator_loss(
+            fake_logits=discr_outputs.disentangling_information_y
         )
 
-        gan_loss_d = (gan_loss_x_d + gan_loss_y_d) * self.disentangling_loss_coeff
         gan_loss_g = (gan_loss_x_g + gan_loss_y_g) * self.disentangling_loss_coeff
 
         # Get classification error
-        digit_bg_classif_loss, digit_bg_accuracy = self.classif_loss(
-            y_pred=edim_outputs.digit_bg_logits,
-            target=digit_labels,
-        )
-        digit_fg_classif_loss, digit_fg_accuracy = self.classif_loss(
-            y_pred=edim_outputs.digit_fg_logits, target=digit_labels
-        )
-        color_bg_classif_loss, color_bg_accuracy = self.classif_loss(
-            y_pred=edim_outputs.color_bg_logits,
-            target=color_bg_labels,
-        )
-        color_fg_classif_loss, color_fg_accuracy = self.classif_loss(
-            y_pred=edim_outputs.color_fg_logits, target=color_fg_labels
-        )
 
         # For each network, we assign a loss objective
         encoder_loss = global_mutual_loss + local_mutual_loss + gan_loss_g
 
-        total_loss = (
-            global_mutual_loss
-            + local_mutual_loss
-            + gan_loss_g
-            + gan_loss_d
-            + digit_bg_classif_loss
+        return GenLosses(
+            encoder_loss=encoder_loss,
+            local_mutual_loss=local_mutual_loss,
+            global_mutual_loss=global_mutual_loss,
+            gan_loss_g=gan_loss_g,
+        )
+
+    def compute_discriminator_loss(self, discr_outputs: DiscriminatorOutputs):
+        gan_loss_x_d = self.discriminator_loss(
+            real_logits=discr_outputs.disentangling_information_x_prime,
+            fake_logits=discr_outputs.disentangling_information_x.detach(),
+        )
+        gan_loss_y_d = self.discriminator_loss(
+            real_logits=discr_outputs.disentangling_information_y_prime,
+            fake_logits=discr_outputs.disentangling_information_y.detach(),
+        )
+
+        gan_loss_d = (gan_loss_x_d + gan_loss_y_d) * self.disentangling_loss_coeff
+
+        return DiscrLosses(gan_loss_d=gan_loss_d)
+
+    def compute_classif_loss(
+        self,
+        classif_outputs: ClassifierOutputs,
+        digit_labels,
+        color_bg_labels,
+        color_fg_labels,
+    ):
+
+        digit_bg_classif_loss, digit_bg_accuracy = self.classif_loss(
+            y_pred=classif_outputs.digit_bg_logits,
+            target=digit_labels,
+        )
+        digit_fg_classif_loss, digit_fg_accuracy = self.classif_loss(
+            y_pred=classif_outputs.digit_fg_logits, target=digit_labels
+        )
+        color_bg_classif_loss, color_bg_accuracy = self.classif_loss(
+            y_pred=classif_outputs.color_bg_logits,
+            target=color_bg_labels,
+        )
+        color_fg_classif_loss, color_fg_accuracy = self.classif_loss(
+            y_pred=classif_outputs.color_fg_logits, target=color_fg_labels
+        )
+        classif_loss = (
+            digit_bg_classif_loss
             + digit_fg_classif_loss
             + color_bg_classif_loss
             + color_fg_classif_loss
         )
-        return EDIMLosses(
-            total_loss=total_loss,
-            encoder_loss=encoder_loss,
-            local_mutual_loss=local_mutual_loss,
-            global_mutual_loss=global_mutual_loss,
-            gan_loss_d=gan_loss_d,
-            gan_loss_g=gan_loss_g,
+
+        return ClassifLosses(
+            classif_loss=classif_loss,
             digit_bg_classif_loss=digit_bg_classif_loss,
             digit_fg_classif_loss=digit_fg_classif_loss,
             color_bg_classif_loss=color_bg_classif_loss,
