@@ -8,6 +8,7 @@ from src.losses.loss_functions import (
 from src.utils.custom_typing import (
     DiscriminatorOutputs,
     ClassifierOutputs,
+    EDIMOutputs,
     GenLosses,
     DiscrLosses,
     ClassifLosses,
@@ -31,7 +32,7 @@ class EDIMLoss(nn.Module):
         self.discriminator_loss = DiscriminatorLoss()
         self.generator_loss = GeneratorLoss()
 
-    def compute_generator_loss(self, edim_outputs, discr_outputs: DiscriminatorOutputs):
+    def compute_generator_loss(self, edim_outputs: EDIMOutputs):
 
         # Compute Global mutual loss
         global_mutual_loss_x = self.djs_loss(
@@ -60,12 +61,8 @@ class EDIMLoss(nn.Module):
             local_mutual_loss_x + local_mutual_loss_y
         ) * self.local_mutual_loss_coeff
 
-        gan_loss_x_g = self.generator_loss(
-            fake_logits=discr_outputs.disentangling_information_x
-        )
-        gan_loss_y_g = self.generator_loss(
-            fake_logits=discr_outputs.disentangling_information_y
-        )
+        gan_loss_x_g = self.generator_loss(fake_logits=edim_outputs.fake_x)
+        gan_loss_y_g = self.generator_loss(fake_logits=edim_outputs.fake_y)
 
         gan_loss_g = (gan_loss_x_g + gan_loss_y_g) * self.disentangling_loss_coeff
 
@@ -83,12 +80,12 @@ class EDIMLoss(nn.Module):
 
     def compute_discriminator_loss(self, discr_outputs: DiscriminatorOutputs):
         gan_loss_x_d = self.discriminator_loss(
-            real_logits=discr_outputs.disentangling_information_x_prime,
-            fake_logits=discr_outputs.disentangling_information_x.detach(),
+            real_logits=discr_outputs.disentangling_information_x_prime.detach(),
+            fake_logits=discr_outputs.disentangling_information_x,
         )
         gan_loss_y_d = self.discriminator_loss(
-            real_logits=discr_outputs.disentangling_information_y_prime,
-            fake_logits=discr_outputs.disentangling_information_y.detach(),
+            real_logits=discr_outputs.disentangling_information_y_prime.detach(),
+            fake_logits=discr_outputs.disentangling_information_y,
         )
 
         gan_loss_d = (gan_loss_x_d + gan_loss_y_d) * self.disentangling_loss_coeff

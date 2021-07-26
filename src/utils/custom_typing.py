@@ -47,6 +47,14 @@ class EDIMOutputs(NamedTuple):
     local_mutual_M_R_y_prime: torch.tensor
     shared_x: torch.tensor
     shared_y: torch.tensor
+    fake_x: torch.tensor
+    fake_y: torch.tensor
+    R_y_x: torch.tensor
+    R_x_y: torch.tensor
+    shuffle_x: torch.tensor
+    shuffle_y: torch.tensor
+    exclusive_x: torch.tensor
+    exclusive_y: torch.tensor
 
 
 class SDIMLosses(NamedTuple):

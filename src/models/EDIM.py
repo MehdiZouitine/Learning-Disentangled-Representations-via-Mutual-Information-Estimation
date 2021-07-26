@@ -148,6 +148,12 @@ class EDIM(nn.Module):
         shared_x_prime = torch.cat([shared_x[1:], shared_x[0].unsqueeze(0)], axis=0)
         shared_y_prime = torch.cat([shared_y[1:], shared_y[0].unsqueeze(0)], axis=0)
 
+        shuffle_x = torch.cat([shared_y_prime, exclusive_x], axis=1)
+        shuffle_y = torch.cat([shared_x_prime, exclusive_y], axis=1)
+        fake_x = self.discriminator_x(R_y_x)
+
+        fake_y = self.discriminator_y(R_x_y)
+
         return EDIMOutputs(
             global_mutual_M_R_x=global_mutual_M_R_x,
             global_mutual_M_R_x_prime=global_mutual_M_R_x_prime,
@@ -159,21 +165,22 @@ class EDIM(nn.Module):
             local_mutual_M_R_y_prime=local_mutual_M_R_y_prime,
             shared_x=shared_x,
             shared_y=shared_y,
-        ), GeneratorOutputs(
-            real_x=R_y_x,
-            real_y=R_x_y,
-            fake_x=torch.cat([shared_y_prime, exclusive_x], axis=1),
-            fake_y=torch.cat([shared_x_prime, exclusive_y], axis=1),
+            fake_x=fake_x,
+            fake_y=fake_y,
+            R_y_x=R_y_x,
+            R_x_y=R_x_y,
+            shuffle_x=shuffle_x,
+            shuffle_y=shuffle_y,
             exclusive_x=exclusive_x,
             exclusive_y=exclusive_y,
         )
 
-    def forward_discriminator(self, gen_outputs: GeneratorOutputs):
-        out = gen_outputs
-        disentangling_information_x = self.discriminator_x(out.real_x)
-        disentangling_information_x_prime = self.discriminator_x(out.fake_x.detach())
-        disentangling_information_y = self.discriminator_y(out.real_y)
-        disentangling_information_y_prime = self.discriminator_y(out.fake_y.detach())
+    def forward_discriminator(self, edim_outputs: EDIMOutputs):
+        out = edim_outputs
+        disentangling_information_x = self.discriminator_x(out.R_y_x.detach())
+        disentangling_information_x_prime = self.discriminator_x(out.shuffle_x)
+        disentangling_information_y = self.discriminator_y(out.R_x_y.detach())
+        disentangling_information_y_prime = self.discriminator_y(out.shuffle_y)
         return DiscriminatorOutputs(
             disentangling_information_x=disentangling_information_x,
             disentangling_information_x_prime=disentangling_information_x_prime,
@@ -181,8 +188,8 @@ class EDIM(nn.Module):
             disentangling_information_y_prime=disentangling_information_y_prime,
         )
 
-    def forward_classifier(self, gen_outputs: GeneratorOutputs):
-        out = gen_outputs
+    def forward_classifier(self, edim_outputs: EDIMOutputs):
+        out = edim_outputs
         digit_bg_logits = self.digit_bg_classifier(out.exclusive_x.detach())
         digit_fg_logits = self.digit_fg_classifier(out.exclusive_y.detach())
         color_bg_logits = self.color_bg_classifier(out.exclusive_x.detach())

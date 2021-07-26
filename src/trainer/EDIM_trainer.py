@@ -76,8 +76,7 @@ class EDIMTrainer:
             model.color_fg_classifier.parameters(), lr=learning_rate
         )
 
-    def gradient_zero(self):
-
+    def update_generator(self, edim_outputs: EDIMOutputs):
         self.optimizer_encoder_x.zero_grad()
         self.optimizer_encoder_y.zero_grad()
 
@@ -87,49 +86,10 @@ class EDIMTrainer:
         self.optimizer_global_stat_x.zero_grad()
         self.optimizer_global_stat_y.zero_grad()
 
-        self.optimizer_discriminator_x.zero_grad()
-        self.optimizer_discriminator_y.zero_grad()
-
-        self.optimizer_digit_bg_classifier.zero_grad()
-        self.optimizer_digit_fg_classifier.zero_grad()
-        self.optimizer_bg_classifier.zero_grad()
-        self.optimizer_fg_classifier.zero_grad()
-
-    def compute_gradient_gen(self, edim_outputs, discr_outputs):
         losses = self.loss.compute_generator_loss(
             edim_outputs=edim_outputs,
-            discr_outputs=discr_outputs,
         )
         losses.encoder_loss.backward()
-        return losses
-
-    def compute_gradient_discr(
-        self,
-        discr_outputs,
-    ):
-        losses = self.loss.compute_discriminator_loss(discr_outputs=discr_outputs)
-        losses.gan_loss_d.backward(retain_graph=True)
-
-        return losses
-
-    def compute_gradient_classif(
-        self,
-        classif_outputs,
-        digit_labels,
-        color_bg_labels,
-        color_fg_labels,
-    ):
-        losses = self.loss.compute_classif_loss(
-            classif_outputs=classif_outputs,
-            digit_labels=digit_labels,
-            color_bg_labels=color_bg_labels,
-            color_fg_labels=color_bg_labels,
-        )
-        losses.classif_loss.backward()
-        return losses
-
-    def gradient_step(self):
-
         self.optimizer_encoder_x.step()
         self.optimizer_encoder_y.step()
 
@@ -138,14 +98,44 @@ class EDIMTrainer:
 
         self.optimizer_global_stat_x.step()
         self.optimizer_global_stat_y.step()
+        return losses
 
+    def update_discriminator(
+        self,
+        discr_outputs: DiscriminatorOutputs,
+    ):
+        self.optimizer_discriminator_x.zero_grad()
+        self.optimizer_discriminator_y.zero_grad()
+        losses = self.loss.compute_discriminator_loss(discr_outputs=discr_outputs)
+        losses.gan_loss_d.backward()
         self.optimizer_discriminator_x.step()
         self.optimizer_discriminator_y.step()
 
+        return losses
+
+    def update_classifier(
+        self,
+        classif_outputs,
+        digit_labels,
+        color_bg_labels,
+        color_fg_labels,
+    ):
+        self.optimizer_digit_bg_classifier.zero_grad()
+        self.optimizer_digit_fg_classifier.zero_grad()
+        self.optimizer_bg_classifier.zero_grad()
+        self.optimizer_fg_classifier.zero_grad()
+        losses = self.loss.compute_classif_loss(
+            classif_outputs=classif_outputs,
+            digit_labels=digit_labels,
+            color_bg_labels=color_bg_labels,
+            color_fg_labels=color_fg_labels,
+        )
+        losses.classif_loss.backward()
         self.optimizer_digit_bg_classifier.step()
         self.optimizer_digit_fg_classifier.step()
         self.optimizer_bg_classifier.step()
         self.optimizer_fg_classifier.step()
+        return losses
 
     def train(self, epochs, experiment_name="test"):
         mlflow.set_experiment(experiment_name=experiment_name)
@@ -159,31 +149,28 @@ class EDIMTrainer:
             for epoch in tqdm(range(epochs)):
                 for idx, train_batch in enumerate(self.train_dataloader):
                     sample = train_batch
-                    self.gradient_zero()
-                    edim_outputs, gen_outputs = self.model.forward_generator(
+                    edim_outputs = self.model.forward_generator(
                         x=sample.bg.to(self.device), y=sample.fg.to(self.device)
                     )
+                    gen_losses = self.update_generator(edim_outputs=edim_outputs)
 
                     discr_outputs = self.model.forward_discriminator(
-                        gen_outputs=gen_outputs
+                        edim_outputs=edim_outputs
                     )
-                    gen_losses = self.compute_gradient_gen(
-                        edim_outputs=edim_outputs, discr_outputs=discr_outputs
-                    )
-
-                    discr_losses = self.compute_gradient_discr(
+                    discr_losses = self.update_discriminator(
                         discr_outputs=discr_outputs
                     )
 
-                    classif_outputs = self.model.forward_classifier(gen_outputs)
-                    classif_losses = self.compute_gradient_classif(
+                    classif_outputs = self.model.forward_classifier(
+                        edim_outputs=edim_outputs
+                    )
+                    classif_losses = self.update_classifier(
                         classif_outputs=classif_outputs,
                         digit_labels=sample.digit_label.to(self.device),
                         color_bg_labels=sample.bg_label.to(self.device),
                         color_fg_labels=sample.fg_label.to(self.device),
                     )
 
-                    self.gradient_step()
                     dict_gen_losses = gen_losses._asdict()
                     mlflow.log_metrics(
                         {k: v.item() for k, v in dict_gen_losses.items()}, step=log_step
