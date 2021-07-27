@@ -3,3 +3,4 @@ data/*
 *.zip
 *.pyc
 mlruns/*
+*.ipynb
