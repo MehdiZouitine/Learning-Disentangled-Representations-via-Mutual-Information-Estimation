@@ -80,11 +80,11 @@ class EDIMLoss(nn.Module):
 
     def compute_discriminator_loss(self, discr_outputs: DiscriminatorOutputs):
         gan_loss_x_d = self.discriminator_loss(
-            real_logits=discr_outputs.disentangling_information_x_prime.detach(),
+            real_logits=discr_outputs.disentangling_information_x_prime,
             fake_logits=discr_outputs.disentangling_information_x,
         )
         gan_loss_y_d = self.discriminator_loss(
-            real_logits=discr_outputs.disentangling_information_y_prime.detach(),
+            real_logits=discr_outputs.disentangling_information_y_prime,
             fake_logits=discr_outputs.disentangling_information_y,
         )
 

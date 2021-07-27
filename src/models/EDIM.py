@@ -150,8 +150,8 @@ class EDIM(nn.Module):
 
         shuffle_x = torch.cat([shared_y_prime, exclusive_x], axis=1)
         shuffle_y = torch.cat([shared_x_prime, exclusive_y], axis=1)
-        fake_x = self.discriminator_x(R_y_x)
 
+        fake_x = self.discriminator_x(R_y_x)
         fake_y = self.discriminator_y(R_x_y)
 
         return EDIMOutputs(
@@ -178,9 +178,9 @@ class EDIM(nn.Module):
     def forward_discriminator(self, edim_outputs: EDIMOutputs):
         out = edim_outputs
         disentangling_information_x = self.discriminator_x(out.R_y_x.detach())
-        disentangling_information_x_prime = self.discriminator_x(out.shuffle_x)
+        disentangling_information_x_prime = self.discriminator_x(out.shuffle_x.detach())
         disentangling_information_y = self.discriminator_y(out.R_x_y.detach())
-        disentangling_information_y_prime = self.discriminator_y(out.shuffle_y)
+        disentangling_information_y_prime = self.discriminator_y(out.shuffle_y.detach())
         return DiscriminatorOutputs(
             disentangling_information_x=disentangling_information_x,
             disentangling_information_x_prime=disentangling_information_x_prime,
