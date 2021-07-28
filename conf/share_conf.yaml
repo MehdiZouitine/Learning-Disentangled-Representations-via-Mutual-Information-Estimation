@@ -1,9 +1,10 @@
-training_stage: share_training
+training_stage: shared
 
 training_param:
   batch_size : 64
   learning_rate : 0.0001
   device: cuda
+  epochs: 16
 
 model_param:
   img_size : 28

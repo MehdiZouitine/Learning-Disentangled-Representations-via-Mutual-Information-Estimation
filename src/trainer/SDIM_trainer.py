@@ -13,13 +13,11 @@ class SDIMTrainer:
         model: SDIM,
         loss: SDIMLoss,
         dataset_train,
-        dataset_test,
         learning_rate,
         batch_size,
         device,
     ):
         self.train_dataloader = DataLoader(dataset_train, batch_size=batch_size)
-        self.test_dataloader = DataLoader(dataset_test, batch_size=batch_size)
         self.model = model.to(device)
         self.loss = loss
         self.device = device
@@ -98,8 +96,8 @@ class SDIMTrainer:
         self.optimizer_bg_classifier.step()
         self.optimizer_fg_classifier.step()
 
-    def train(self, epochs, experiment_name="test"):
-        mlflow.set_experiment(experiment_name=experiment_name)
+    def train(self, epochs, xp_name="test"):
+        mlflow.set_experiment(experiment_name=xp_name)
         with mlflow.start_run() as run:
             mlflow.log_param("Batch size", self.batch_size)
             mlflow.log_param("Learning rate", self.learning_rate)
@@ -127,29 +125,6 @@ class SDIMTrainer:
                     log_step += 1
                     self.gradient_step()
 
-            encoder_x_path, encoder_y_path = "sh_encoder_x.pth", "sh_encoder_y.pth"
+            encoder_x_path, encoder_y_path = "sh_encoder_x", "sh_encoder_y"
             mpy.log_state_dict(self.model.sh_enc_x.state_dict(), encoder_x_path)
             mpy.log_state_dict(self.model.sh_enc_y.state_dict(), encoder_y_path)
-
-
-if __name__ == "__main__":
-    # 0.5 1 01
-    from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
-
-    sdim = SDIM(img_size=28, channels=3, shared_dim=64, switched=True)
-    loss = SDIMLoss(
-        local_mutual_loss_coeff=1, global_mutual_loss_coeff=0.5, shared_loss_coeff=0.1
-    )
-
-    train_dataset = ColoredMNISTDataset(train=True)
-    test_dataset = ColoredMNISTDataset(train=False)
-    trainer = SDIMTrainer(
-        dataset_train=train_dataset,
-        dataset_test=train_dataset,
-        model=sdim,
-        loss=loss,
-        learning_rate=1e-4,
-        batch_size=64,
-        device="cuda",
-    )
-    trainer.train(epochs=16, experiment_name="Get_shared_repr")

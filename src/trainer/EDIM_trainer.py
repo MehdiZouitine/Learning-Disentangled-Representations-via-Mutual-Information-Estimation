@@ -20,13 +20,11 @@ class EDIMTrainer:
         model: EDIM,
         loss: EDIMLoss,
         dataset_train,
-        dataset_test,
         learning_rate,
         batch_size,
         device,
     ):
         self.train_dataloader = DataLoader(dataset_train, batch_size=batch_size)
-        self.test_dataloader = DataLoader(dataset_test, batch_size=batch_size)
         self.model = model.to(device)
         self.loss = loss
         self.device = device
@@ -137,8 +135,8 @@ class EDIMTrainer:
         self.optimizer_fg_classifier.step()
         return losses
 
-    def train(self, epochs, experiment_name="test"):
-        mlflow.set_experiment(experiment_name=experiment_name)
+    def train(self, epochs, xp_name="test"):
+        mlflow.set_experiment(experiment_name=xp_name)
         with mlflow.start_run() as run:
             mlflow.log_param("Batch size", self.batch_size)
             mlflow.log_param("Learning rate", self.learning_rate)
@@ -190,55 +188,3 @@ class EDIMTrainer:
             encoder_x_path, encoder_y_path = "ex_encoder", "ex_encoder_y"
             mpy.log_state_dict(self.model.ex_enc_x.state_dict(), encoder_x_path)
             mpy.log_state_dict(self.model.ex_enc_y.state_dict(), encoder_y_path)
-
-
-if __name__ == "__main__":
-    # 0.5 1 01
-    from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
-    from src.neural_networks.encoder import BaseEncoder
-    import torch
-
-    trained_enc_x = BaseEncoder(
-        img_size=28, in_channels=3, num_filters=64, kernel_size=4, repr_dim=64
-    )
-    trained_enc_y = BaseEncoder(
-        img_size=28, in_channels=3, num_filters=64, kernel_size=4, repr_dim=64
-    )
-    trained_enc_x.load_state_dict(
-        torch.load(
-            "/home/mehdi.zouitine/spaghetti/mlruns/1/7713ce12821b4d41af9d68719c4bceb9/artifacts/sh_encoder_x.pth/state_dict.pth"
-        )
-    )
-    trained_enc_y.load_state_dict(
-        torch.load(
-            "/home/mehdi.zouitine/spaghetti/mlruns/1/7713ce12821b4d41af9d68719c4bceb9/artifacts/sh_encoder_y.pth/state_dict.pth"
-        )
-    )
-
-    freeze_grad_and_eval(trained_enc_x)
-    freeze_grad_and_eval(trained_enc_y)
-    edim = EDIM(
-        img_size=28,
-        channels=3,
-        shared_dim=64,
-        exclusive_dim=8,
-        trained_encoder_x=trained_enc_x,
-        trained_encoder_y=trained_enc_y,
-    )
-    loss = EDIMLoss(
-        local_mutual_loss_coeff=1,
-        global_mutual_loss_coeff=0.5,
-        disentangling_loss_coeff=0.1,
-    )
-    train_dataset = ColoredMNISTDataset(train=True)
-    test_dataset = ColoredMNISTDataset(train=False)
-    trainer = EDIMTrainer(
-        dataset_train=train_dataset,
-        dataset_test=train_dataset,
-        model=edim,
-        loss=loss,
-        learning_rate=1e-4,
-        batch_size=64,
-        device="cuda",
-    )
-    trainer.train(epochs=11, experiment_name="_Get_exclusive_repr")

@@ -1,20 +1,20 @@
-training_stage: exclusive_training
+training_stage: exclusive
 
 training_param:
   batch_size : 64
   learning_rate : 0.0001
   device: cuda
+  epochs : 11
 
 model_param:
   img_size : 28
   channels : 3
-  shared_dim : 64
   exclusive_dim: 8
   switched : True
   
-pretrained_encoder:
-  enc_x_path :
-  enc_y_path : 
+shared_param:
+  img_size : 28
+  shared_dim : 64
 
 loss_param:
   local_mutual_loss_coeff: 1

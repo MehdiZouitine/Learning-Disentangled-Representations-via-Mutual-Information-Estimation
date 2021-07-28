@@ -82,7 +82,7 @@ class ColoredMNISTDataset(Dataset):
         image, digit_label = self.data[index]
         # image /= 255
         rgb_color_bg, rgb_color_fg, bg_label, fg_label = self.get_random_colors()
-        fg_digit, bg_digit = self.create_colored_pairs(
+        bg_digit, fg_digit = self.create_colored_pairs(
             image=image.squeeze(0), rgb_color_bg=rgb_color_bg, rgb_color_fg=rgb_color_fg
         )
         fg_digit /= 255
