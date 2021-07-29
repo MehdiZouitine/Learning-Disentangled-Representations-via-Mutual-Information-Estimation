@@ -8,6 +8,7 @@ import numpy as np
 import torch.nn.functional as F
 from src.utils.custom_typing import ColoredMNISTData
 from torch.utils.data import DataLoader
+import os
 
 
 class ColoredMNISTDataset(Dataset):
@@ -74,6 +75,8 @@ class ColoredMNISTDataset(Dataset):
 
     def __init__(self, train=True, data_folder="data") -> None:
         super().__init__()
+        if not os.path.isdir(data_folder):
+            os.makedirs(data_folder)
         self.data = datasets.MNIST(
             root=data_folder, train=train, download=True, transform=ToTensor()
         )

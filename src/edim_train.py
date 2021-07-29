@@ -16,6 +16,7 @@ from src.neural_networks.encoder import BaseEncoder
 def run(
     xp_name: str,
     conf_path: str,
+    data_base_folder: str,
     trained_enc_x_path: str,
     trained_enc_y_path: str,
     seed: int = None,
@@ -71,7 +72,7 @@ def run(
         disentangling_loss_coeff=LOSS_PARAM["disentangling_loss_coeff"],
     )
 
-    train_dataset = ColoredMNISTDataset(train=True)
+    train_dataset = ColoredMNISTDataset(train=True, data_folder=data_base_folder)
 
     device = TRAINING_PARAM["device"]
     learning_rate = TRAINING_PARAM["learning_rate"]
@@ -102,6 +103,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conf_path", nargs="?", type=str, default=None, help="Configuration file"
     )
+    parser.add_argument(
+        "--data_base_folder", nargs="?", type=str, default=None, help="Data folder"
+    )
 
     parser.add_argument("--seed", nargs="?", type=int, default=None, help="Random seed")
     parser.add_argument(
@@ -122,12 +126,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     xp_name = args.xp_name
     conf_path = args.conf_path
+    data_base_folder = args.data_base_folder
     seed = args.seed
     trained_enc_x_path = args.trained_enc_x_path
     trained_enc_y_path = args.trained_enc_y_path
     run(
         xp_name=xp_name,
         conf_path=conf_path,
+        data_base_folder=data_base_folder,
         trained_enc_x_path=args.trained_enc_x_path,
         trained_enc_y_path=args.trained_enc_y_path,
         seed=seed,
