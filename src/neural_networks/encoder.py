@@ -52,11 +52,11 @@ class BaseEncoder(nn.Module):
             out_features=repr_dim,
         )
 
-    def forward(self, x: torch.tensor) -> EncoderOutput:
+    def forward(self, x: torch.Tensor) -> EncoderOutput:
         """Forward encoder
 
         Args:
-            x (torch.tensor): Image from a given domain
+            x (torch.Tensor): Image from a given domain
 
         Returns:
             EncoderOutput: Representation and feature map

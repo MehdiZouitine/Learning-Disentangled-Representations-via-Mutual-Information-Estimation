@@ -17,13 +17,13 @@ class ClassifLoss(nn.Module):
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def __call__(
-        self, y_pred: torch.tensor, target: torch.tensor
+        self, y_pred: torch.Tensor, target: torch.Tensor
     ) -> Tuple[float, float]:
         """Compute cross entropy loss
 
         Args:
-            y_pred (torch.tensor): Classifier prediction
-            target (torch.tensor): Ground truth
+            y_pred (torch.Tensor): Classifier prediction
+            target (torch.Tensor): Ground truth
 
         Returns:
             Tuple[float, float]: Error and accuracy over the current batch
@@ -43,12 +43,12 @@ class DJSLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, T: torch.tensor, T_prime: torch.tensor) -> float:
+    def __call__(self, T: torch.Tensor, T_prime: torch.Tensor) -> float:
         """Estimator of the Jensen Shannon Divergence see paper equation (2)
 
         Args:
-            T (torch.tensor): Statistique network estimation from the marginal distribution P(x)P(z)
-            T_prime (torch.tensor): Statistique network estimation from the joint distribution P(xz)
+            T (torch.Tensor): Statistique network estimation from the marginal distribution P(x)P(z)
+            T_prime (torch.Tensor): Statistique network estimation from the joint distribution P(xz)
 
         Returns:
             float: DJS estimation value
@@ -66,12 +66,12 @@ class DiscriminatorLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, real_logits: torch.tensor, fake_logits: torch.tensor) -> float:
+    def __call__(self, real_logits: torch.Tensor, fake_logits: torch.Tensor) -> float:
         """Discriminator loss gan
 
         Args:
-            real_logits (torch.tensor): Sample from the real distribution here from P(Sx)P(Ex)
-            fake_logits (torch.tensor): Sample from the fake (generated) distribution here from P(SxEx)
+            real_logits (torch.Tensor): Sample from the real distribution here from P(Sx)P(Ex)
+            fake_logits (torch.Tensor): Sample from the fake (generated) distribution here from P(SxEx)
 
         Returns:
             float: Discriminator loss value
@@ -96,11 +96,11 @@ class GeneratorLoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, fake_logits: torch.tensor) -> float:
+    def __call__(self, fake_logits: torch.Tensor) -> float:
         """Generator loss
 
         Args:
-            fake_logits (torch.tensor): Sample from the fake (generated) distribution here from P(SxEx)
+            fake_logits (torch.Tensor): Sample from the fake (generated) distribution here from P(SxEx)
 
         Returns:
             float: Generator loss value

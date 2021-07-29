@@ -160,17 +160,17 @@ class EDIMTrainer:
     def update_classifier(
         self,
         classif_outputs: ClassifierOutputs,
-        digit_labels: torch.tensor,
-        color_bg_labels: torch.tensor,
-        color_fg_labels: torch.tensor,
+        digit_labels: torch.Tensor,
+        color_bg_labels: torch.Tensor,
+        color_fg_labels: torch.Tensor,
     ) -> ClassifLosses:
         """Update classifier on generated exclusive reprensentation
 
         Args:
             classif_outputs (ClassifierOutputs): Classifier ouputs probabilities
-            digit_labels (torch.tensor): Label of the digit
-            color_bg_labels (torch.tensor): Background color label
-            color_fg_labels (torch.tensor): Foreground color label
+            digit_labels (torch.Tensor): Label of the digit
+            color_bg_labels (torch.Tensor): Background color label
+            color_fg_labels (torch.Tensor): Foreground color label
 
         Returns:
             ClassifLosses: Classifiers losses

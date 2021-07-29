@@ -32,17 +32,17 @@ class SDIMLoss(nn.Module):
     def __call__(
         self,
         sdim_outputs: SDIMOutputs,
-        digit_labels: torch.tensor,
-        color_bg_labels: torch.tensor,
-        color_fg_labels: torch.tensor,
+        digit_labels: torch.Tensor,
+        color_bg_labels: torch.Tensor,
+        color_fg_labels: torch.Tensor,
     ) -> SDIMLosses:
         """Compute all the loss functions needed to extract the shared part
 
         Args:
             sdim_outputs (SDIMOutputs): Output of the forward pass of the shared information model
-            digit_labels (torch.tensor): Label of the digit
-            color_bg_labels (torch.tensor): Background color of the images
-            color_fg_labels (torch.tensor): Foreground color of the images
+            digit_labels (torch.Tensor): Label of the digit
+            color_bg_labels (torch.Tensor): Background color of the images
+            color_fg_labels (torch.Tensor): Foreground color of the images
 
         Returns:
             SDIMLosses: Shared information losses

@@ -88,17 +88,17 @@ class SDIMTrainer:
     def compute_gradient(
         self,
         sdim_output: SDIMOutputs,
-        digit_labels: torch.tensor,
-        color_bg_labels: torch.tensor,
-        color_fg_labels: torch.tensor,
+        digit_labels: torch.Tensor,
+        color_bg_labels: torch.Tensor,
+        color_fg_labels: torch.Tensor,
     ) -> SDIMLosses:
         """Compute the SDIM gradient
 
         Args:
             sdim_output (SDIMOutputs): Shared model outputs
-            digit_labels (torch.tensor): [description]
-            color_bg_labels (torch.tensor): [description]
-            color_fg_labels (torch.tensor): [description]
+            digit_labels (torch.Tensor): [description]
+            color_bg_labels (torch.Tensor): [description]
+            color_fg_labels (torch.Tensor): [description]
 
         Returns:
             SDIMLosses: [Shared model losses value]

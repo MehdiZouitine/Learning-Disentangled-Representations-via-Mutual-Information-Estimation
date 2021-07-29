@@ -3,16 +3,16 @@ import torch
 from src.neural_networks.encoder import BaseEncoder
 
 
-def tile_and_concat(tensor: torch.tensor, vector: torch.tensor) -> torch.tensor:
+def tile_and_concat(tensor: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
     """Merge 1D and 2D tensor (use to aggregate feature maps and representation
     and compute local mutual information estimation)
 
     Args:
-        tensor (torch.tensor): 2D tensor (feature maps)
-        vector (torch.tensor): 1D tensor representation
+        tensor (torch.Tensor): 2D tensor (feature maps)
+        vector (torch.Tensor): 1D tensor representation
 
     Returns:
-        torch.tensor: Merged tensor (2D)
+        torch.Tensor: Merged tensor (2D)
     """
 
     B, C, H, W = tensor.size()
@@ -39,7 +39,7 @@ class LocalStatisticsNetwork(nn.Module):
         self.conv3 = nn.Conv2d(in_channels=512, out_channels=1, kernel_size=1, stride=1)
         self.relu = nn.ReLU()
 
-    def forward(self, concat_feature: torch.tensor) -> torch.tensor:
+    def forward(self, concat_feature: torch.Tensor) -> torch.Tensor:
         x = self.conv1(concat_feature)
         x = self.relu(x)
         x = self.conv2(x)
@@ -72,8 +72,8 @@ class GlobalStatisticsNetwork(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(
-        self, feature_map: torch.tensor, representation: torch.tensor
-    ) -> torch.tensor:
+        self, feature_map: torch.Tensor, representation: torch.Tensor
+    ) -> torch.Tensor:
         feature_map = self.flatten(feature_map)
         x = torch.cat([feature_map, representation], dim=1)
         x = self.dense1(x)

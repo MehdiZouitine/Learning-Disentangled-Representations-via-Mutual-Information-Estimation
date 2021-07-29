@@ -74,12 +74,12 @@ class SDIM(nn.Module):
         self.color_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
         self.color_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
 
-    def forward(self, x: torch.tensor, y: torch.tensor) -> SDIMOutputs:
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> SDIMOutputs:
         """Forward pass of the shared model
 
         Args:
-            x (torch.tensor): Image from domain X
-            y (torch.tensor): Image from domain Y
+            x (torch.Tensor): Image from domain X
+            y (torch.Tensor): Image from domain Y
 
         Returns:
             SDIMOutputs: Outputs of the SDIM model

@@ -18,14 +18,14 @@ class Discriminator(nn.Module):
         self.dense3 = nn.Linear(in_features=200, out_features=1)
         self.relu = nn.ReLU()
 
-    def forward(self, concat_repr: torch.tensor) -> torch.tensor:
+    def forward(self, concat_repr: torch.Tensor) -> torch.Tensor:
         """Forward discriminator using the shared and the exclusive representation
 
         Args:
-            concat_repr (torch.tensor): Shared & exclusive representation
+            concat_repr (torch.Tensor): Shared & exclusive representation
 
         Returns:
-            torch.tensor: Probability that the data are fake or real
+            torch.Tensor: Probability that the data are fake or real
         """
         x = self.dense1(concat_repr)
         x = self.relu(x)

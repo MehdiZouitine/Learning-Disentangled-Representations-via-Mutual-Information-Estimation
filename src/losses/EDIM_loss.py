@@ -123,17 +123,17 @@ class EDIMLoss(nn.Module):
     def compute_classif_loss(
         self,
         classif_outputs: ClassifierOutputs,
-        digit_labels: torch.tensor,
-        color_bg_labels: torch.tensor,
-        color_fg_labels: torch.tensor,
+        digit_labels: torch.Tensor,
+        color_bg_labels: torch.Tensor,
+        color_fg_labels: torch.Tensor,
     ) -> ClassifLosses:
         """Compute classifiers losses. The accuracy of the classifiers allow to quantify the representations level of disentanglement.
 
         Args:
             classif_outputs (ClassifierOutputs): Classifiers Outputs
-            digit_labels (torch.tensor): Label of the digit
-            color_bg_labels (torch.tensor): Background color of the images
-            color_fg_labels (torch.tensor): Foreground color of the images
+            digit_labels (torch.Tensor): Label of the digit
+            color_bg_labels (torch.Tensor): Background color of the images
+            color_fg_labels (torch.Tensor): Foreground color of the images
 
         Returns:
             ClassifLosses: Classifiers losses
