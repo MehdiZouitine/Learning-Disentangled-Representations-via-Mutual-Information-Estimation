@@ -2,7 +2,14 @@ import torch.nn as nn
 
 
 class Classifier(nn.Module):
-    def __init__(self, feature_dim, output_dim, units=15) -> None:
+    def __init__(self, feature_dim: int, output_dim, units: int = 15) -> None:
+        """Simple dense classifier
+
+        Args:
+            feature_dim (int): [Number of input feature]
+            output_dim ([type]): [Number of classes]
+            units (int, optional): [Intermediate layers dimension]. Defaults to 15.
+        """
         super().__init__()
         self.dense1 = nn.Linear(in_features=feature_dim, out_features=units)
         self.bn1 = nn.BatchNorm1d(num_features=units)
@@ -22,27 +29,3 @@ class Classifier(nn.Module):
         x = self.dense3(x)
         logits = self.bn3(x)
         return logits
-
-
-if __name__ == "__main__":
-    import torch
-
-    # from src..encoder import Bas
-
-    # img_size = 128
-    # x = torch.zeros((64, 3, img_size, img_size))
-    # enc_sh = SharedEncoder(
-    #     img_size=img_size, in_channels=3, num_filters=16, kernel_size=1, shared_dim=64
-    # )
-    # enc_ex = ExclusiveEncoder(
-    #     img_size=img_size,
-    #     in_channels=3,
-    #     num_filters=16,
-    #     kernel_size=3,
-    #     exclusive_dim=64,
-    # )
-
-    # sh_repr, sh_feature = enc_sh(x)
-    # ex_repr, ex_feature = enc_ex(x)
-    # clf = Classifier(feature_dim=sh_repr.size(1), output_dim=10)
-    # print(clf(sh_repr).shape)

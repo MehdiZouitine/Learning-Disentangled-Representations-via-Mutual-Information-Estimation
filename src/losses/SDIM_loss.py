@@ -1,12 +1,25 @@
+import torch
 import torch.nn as nn
 from src.losses.loss_functions import DJSLoss, ClassifLoss
-from src.utils.custom_typing import SDIMLosses
+from src.utils.custom_typing import SDIMLosses, SDIMOutputs
 
 
 class SDIMLoss(nn.Module):
+    """Loss function to extract shared information from the image, see paper equation (5)
+
+    Args:
+        local_mutual_loss_coeff (float): Coefficient of the local Jensen Shannon loss
+        global_mutual_loss_coeff (float): Coefficient of the global Jensen Shannon loss
+        shared_loss_coeff (float): Coefficient of L1 loss, see paper equation (6)
+    """
+
     def __init__(
-        self, local_mutual_loss_coeff, global_mutual_loss_coeff, shared_loss_coeff
+        self,
+        local_mutual_loss_coeff: float,
+        global_mutual_loss_coeff: float,
+        shared_loss_coeff: float,
     ):
+
         super().__init__()
         self.local_mutual_loss_coeff = local_mutual_loss_coeff
         self.global_mutual_loss_coeff = global_mutual_loss_coeff
@@ -14,15 +27,26 @@ class SDIMLoss(nn.Module):
 
         self.djs_loss = DJSLoss()
         self.classif_loss = ClassifLoss()
-        self.l1_loss = nn.L1Loss()
+        self.l1_loss = nn.L1Loss()  # see equation (6)
 
     def __call__(
         self,
-        sdim_outputs,
-        digit_labels,
-        color_bg_labels,
-        color_fg_labels,
-    ):
+        sdim_outputs: SDIMOutputs,
+        digit_labels: torch.tensor,
+        color_bg_labels: torch.tensor,
+        color_fg_labels: torch.tensor,
+    ) -> SDIMLosses:
+        """Compute all the loss functions needed to extract the shared part
+
+        Args:
+            sdim_outputs (SDIMOutputs): Output of the forward pass of the shared information model
+            digit_labels (torch.tensor): Label of the digit
+            color_bg_labels (torch.tensor): Background color of the images
+            color_fg_labels (torch.tensor): Foreground color of the images
+
+        Returns:
+            SDIMLosses: Shared information losses
+        """
 
         # Compute Global mutual loss
         global_mutual_loss_x = self.djs_loss(

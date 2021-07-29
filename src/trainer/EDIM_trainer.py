@@ -1,29 +1,57 @@
+import torch
 import torch.optim as optim
+import torch.nn as nn
 from src.models.EDIM import EDIM
-from src.utils.custom_typing import GeneratorOutputs, DiscriminatorOutputs, EDIMOutputs
+from src.utils.custom_typing import (
+    ClassifLosses,
+    ClassifierOutputs,
+    DiscrLosses,
+    GenLosses,
+    GeneratorOutputs,
+    DiscriminatorOutputs,
+    EDIMOutputs,
+)
 from src.losses.EDIM_loss import EDIMLoss
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
+from torch.utils.data import Dataset
 import mlflow
 import mlflow.pytorch as mpy
 
 
-def freeze_grad_and_eval(model):
+def freeze_grad_and_eval(model: nn.Module):
+    """Freeze a given network, disable batch norm and dropout layers
+
+    Args:
+        model (nn.Module): [Pretrained shared encoder]
+    """
     for param in model.parameters():
         param.requires_grad = False
     model.eval()
 
 
 class EDIMTrainer:
+    """Exclusive Deep Info Max trainer
+
+    Args:
+        model (EDIM): Exclusive model backbone
+        loss (EDIMLoss): Exclusive loss
+        dataset_train (Dataset): Train dataset
+        learning_rate (float): Learning rate
+        batch_size (int): Batch size
+        device (str): Device among cuda/cpu
+    """
+
     def __init__(
         self,
         model: EDIM,
         loss: EDIMLoss,
-        dataset_train,
-        learning_rate,
-        batch_size,
-        device,
+        dataset_train: Dataset,
+        learning_rate: float,
+        batch_size: int,
+        device: str,
     ):
+
         self.train_dataloader = DataLoader(dataset_train, batch_size=batch_size)
         self.model = model.to(device)
         self.loss = loss
@@ -74,7 +102,16 @@ class EDIMTrainer:
             model.color_fg_classifier.parameters(), lr=learning_rate
         )
 
-    def update_generator(self, edim_outputs: EDIMOutputs):
+    def update_generator(self, edim_outputs: EDIMOutputs) -> GenLosses:
+        """Compute the generator gradient and make an optimisation step
+
+        Args:
+            edim_outputs (EDIMOutputs): Exclusive model outputs
+
+        Returns:
+
+            GenLosses: Generator losses
+        """
         self.optimizer_encoder_x.zero_grad()
         self.optimizer_encoder_y.zero_grad()
 
@@ -101,7 +138,16 @@ class EDIMTrainer:
     def update_discriminator(
         self,
         discr_outputs: DiscriminatorOutputs,
-    ):
+    ) -> DiscrLosses:
+        """
+        Compute the generator gradient and make an optimisation step.
+        (With torch gan training should be in 2 stage )
+        Args:
+            discr_outputs (DiscriminatorOutputs): Discriminator outputs
+
+        Returns:
+            DiscrLosses: Discriminator losses
+        """
         self.optimizer_discriminator_x.zero_grad()
         self.optimizer_discriminator_y.zero_grad()
         losses = self.loss.compute_discriminator_loss(discr_outputs=discr_outputs)
@@ -113,11 +159,22 @@ class EDIMTrainer:
 
     def update_classifier(
         self,
-        classif_outputs,
-        digit_labels,
-        color_bg_labels,
-        color_fg_labels,
-    ):
+        classif_outputs: ClassifierOutputs,
+        digit_labels: torch.tensor,
+        color_bg_labels: torch.tensor,
+        color_fg_labels: torch.tensor,
+    ) -> ClassifLosses:
+        """Update classifier on generated exclusive reprensentation
+
+        Args:
+            classif_outputs (ClassifierOutputs): Classifier ouputs probabilities
+            digit_labels (torch.tensor): Label of the digit
+            color_bg_labels (torch.tensor): Background color label
+            color_fg_labels (torch.tensor): Foreground color label
+
+        Returns:
+            ClassifLosses: Classifiers losses
+        """
         self.optimizer_digit_bg_classifier.zero_grad()
         self.optimizer_digit_fg_classifier.zero_grad()
         self.optimizer_bg_classifier.zero_grad()
@@ -135,7 +192,13 @@ class EDIMTrainer:
         self.optimizer_fg_classifier.step()
         return losses
 
-    def train(self, epochs, xp_name="test"):
+    def train(self, epochs: int, xp_name: str = "test"):
+        """Trained excluvise model and log losses and accuracy on Mlflow.
+
+        Args:
+            epochs (int): Number of epochs
+            xp_name (str, optional): Name of the Mlfow experiment. Defaults to "test".
+        """
         mlflow.set_experiment(experiment_name=xp_name)
         with mlflow.start_run() as run:
             mlflow.log_param("Batch size", self.batch_size)

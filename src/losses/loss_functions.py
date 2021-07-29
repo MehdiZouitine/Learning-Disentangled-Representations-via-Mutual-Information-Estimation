@@ -2,10 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.utils.custom_typing import GanLossOutput
+from src.utils.custom_typing import GanLossOutput, Tuple
 
 
 class ClassifLoss(nn.Module):
+    """Classifier loss"""
+
     @staticmethod
     def accuracy(y_pred, target):
         return torch.sum(y_pred == target).float().mean()
@@ -14,7 +16,18 @@ class ClassifLoss(nn.Module):
         super().__init__()
         self.cross_entropy = nn.CrossEntropyLoss()
 
-    def __call__(self, y_pred, target):
+    def __call__(
+        self, y_pred: torch.tensor, target: torch.tensor
+    ) -> Tuple[float, float]:
+        """Compute cross entropy loss
+
+        Args:
+            y_pred (torch.tensor): Classifier prediction
+            target (torch.tensor): Ground truth
+
+        Returns:
+            Tuple[float, float]: Error and accuracy over the current batch
+        """
         batch_size = y_pred.size(0)
 
         classif_error = self.cross_entropy(
@@ -25,10 +38,21 @@ class ClassifLoss(nn.Module):
 
 
 class DJSLoss(nn.Module):
+    """Jensen Shannon Divergence loss"""
+
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, T, T_prime):
+    def __call__(self, T: torch.tensor, T_prime: torch.tensor) -> float:
+        """Estimator of the Jensen Shannon Divergence see paper equation (2)
+
+        Args:
+            T (torch.tensor): Statistique network estimation from the marginal distribution P(x)P(z)
+            T_prime (torch.tensor): Statistique network estimation from the joint distribution P(xz)
+
+        Returns:
+            float: DJS estimation value
+        """
         joint_expectation = (-F.softplus(-T)).mean()
         marginal_expectation = F.softplus(T_prime).mean()
         mutual_info = joint_expectation - marginal_expectation
@@ -37,13 +61,27 @@ class DJSLoss(nn.Module):
 
 
 class DiscriminatorLoss(nn.Module):
+    """Basic discriminator GAN loss """
+
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, real_logits, fake_logits):
+    def __call__(self, real_logits: torch.tensor, fake_logits: torch.tensor) -> float:
+        """Discriminator loss gan
+
+        Args:
+            real_logits (torch.tensor): Sample from the real distribution here from P(Sx)P(Ex)
+            fake_logits (torch.tensor): Sample from the fake (generated) distribution here from P(SxEx)
+
+        Returns:
+            float: Discriminator loss value
+        """
+
+        # Discriminator should predict real logits as logits from the real distribution
         discriminator_real = F.binary_cross_entropy_with_logits(
             input=real_logits, target=torch.ones_like(real_logits)
         )
+        # Discriminator should predict fake logits as logits from the generated distribution
         discriminator_fake = F.binary_cross_entropy_with_logits(
             input=fake_logits, target=torch.zeros_like(fake_logits)
         )
@@ -53,25 +91,22 @@ class DiscriminatorLoss(nn.Module):
 
 
 class GeneratorLoss(nn.Module):
+    """Basic generator GAN loss """
+
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, fake_logits):
+    def __call__(self, fake_logits: torch.tensor) -> float:
+        """Generator loss
 
+        Args:
+            fake_logits (torch.tensor): Sample from the fake (generated) distribution here from P(SxEx)
+
+        Returns:
+            float: Generator loss value
+        """
+        # Discriminator should generate fake logits that fool the discriminator
         generator_loss = F.binary_cross_entropy_with_logits(
             input=fake_logits, target=torch.ones_like(fake_logits)
         )
         return generator_loss
-
-
-if __name__ == "__main__":
-    djs = DJSLoss()
-    gl = GanLoss()
-    clf = ClassifLoss()
-    x = torch.zeros((64, 10))
-    x[0:50, 0] = 1
-    x[50:, 2] = 1
-    y = torch.zeros((64))
-    print(clf(x, y))
-    # print(gl(x, y))
-    # print(djs(x, y))

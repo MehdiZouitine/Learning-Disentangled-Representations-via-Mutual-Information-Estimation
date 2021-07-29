@@ -12,7 +12,15 @@ from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
 
 
 class SDIM(nn.Module):
-    def __init__(self, img_size, channels, shared_dim, switched):
+    def __init__(self, img_size: int, channels: int, shared_dim: int, switched: bool):
+        """Shared Deep Info Max model. Extract the shared information from the images
+
+        Args:
+            img_size (int): Image size (must be squared size)
+            channels (int): Number of inputs channels
+            shared_dim (int): Dimension of the desired shared representation
+            switched (bool): True to use cross mutual information, see paper equation (5)
+        """
         super().__init__()
 
         self.img_size = img_size
@@ -66,7 +74,16 @@ class SDIM(nn.Module):
         self.color_bg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
         self.color_fg_classifier = Classifier(feature_dim=shared_dim, output_dim=12)
 
-    def forward(self, x, y):
+    def forward(self, x: torch.tensor, y: torch.tensor) -> SDIMOutputs:
+        """Forward pass of the shared model
+
+        Args:
+            x (torch.tensor): Image from domain X
+            y (torch.tensor): Image from domain Y
+
+        Returns:
+            SDIMOutputs: Outputs of the SDIM model
+        """
 
         # Get the shared and exclusive features from x and y
         shared_x, M_x = self.sh_enc_x(x)
@@ -125,21 +142,3 @@ class SDIM(nn.Module):
             shared_x=shared_x,
             shared_y=shared_y,
         )
-
-
-if __name__ == "__main__":
-    from torch.utils.data import DataLoader
-
-    sdim = SDIM(img_size=28, channels=3, shared_dim=10, switched=True)
-    d = ColoredMNISTDataset(train=True)
-    import matplotlib.pyplot as plt
-
-    for i in range(100):
-        fig, axs = plt.subplots(2)
-        fig.suptitle("x, y")
-        axs[0].imshow(d[0].fg.permute(1, 2, 0).numpy())
-        axs[1].imshow(d[0].bg.permute(1, 2, 0).numpy())
-        plt.savefig("pair.png")
-        a = input()
-
-    train_dataloader = DataLoader(d, batch_size=3, shuffle=True)

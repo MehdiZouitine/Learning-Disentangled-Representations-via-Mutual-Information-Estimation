@@ -9,7 +9,6 @@ from src.neural_networks.statistics_network import (
 from src.neural_networks.gan import Discriminator
 from src.utils.custom_typing import (
     EDIMOutputs,
-    GeneratorOutputs,
     DiscriminatorOutputs,
     ClassifierOutputs,
 )
@@ -18,15 +17,27 @@ from src.utils.colored_mnist_dataloader import ColoredMNISTDataset
 
 
 class EDIM(nn.Module):
+    """Exclusive Deep Info Max model. Extract the exclusive information from the images.
+
+    Args:
+        img_size (int): Image size (must be squared size)
+        channels (int): Number of inputs channels
+        shared_dim (int): Dimension of the pretrained shared representation
+        exclusive_dim (int): Dimension of the desired shared representation
+        trained_encoder_x (nn.Module): Trained encoder on domain X (pretrained with SDIM)
+        trained_encoder_y (nn.Module): Trained encoder on domain Y (pretrained with SDIM)
+    """
+
     def __init__(
         self,
-        img_size,
-        channels,
-        shared_dim,
-        exclusive_dim,
-        trained_encoder_x,
-        trained_encoder_y,
+        img_size: int,
+        channels: int,
+        shared_dim: int,
+        exclusive_dim: int,
+        trained_encoder_x: nn.Module,
+        trained_encoder_y: nn.Module,
     ):
+
         super().__init__()
 
         self.img_size = img_size
@@ -98,8 +109,16 @@ class EDIM(nn.Module):
         self.color_bg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
         self.color_fg_classifier = Classifier(feature_dim=exclusive_dim, output_dim=12)
 
-    def forward_generator(self, x, y):
+    def forward_generator(self, x: torch.tensor, y: torch.tensor) -> EDIMOutputs:
+        """Forward pass of the generator
 
+        Args:
+            x (torch.tensor): Image from domain X
+            y (torch.tensor): Image from domain Y
+
+        Returns:
+            EDIMOutputs: Generator outputs
+        """
         # Get the shared and exclusive features from x and y
         shared_x, shared_M_x = self.sh_enc_x(x)
         shared_y, shared_M_y = self.sh_enc_y(y)
@@ -175,7 +194,15 @@ class EDIM(nn.Module):
             exclusive_y=exclusive_y,
         )
 
-    def forward_discriminator(self, edim_outputs: EDIMOutputs):
+    def forward_discriminator(self, edim_outputs: EDIMOutputs) -> DiscriminatorOutputs:
+        """Forward pass of the discriminator
+
+        Args:
+            edim_outputs (EDIMOutputs): Outputs from the generator
+
+        Returns:
+            DiscriminatorOutputs: Discriminator outputs
+        """
         out = edim_outputs
         disentangling_information_x = self.discriminator_x(out.R_y_x.detach())
         disentangling_information_x_prime = self.discriminator_x(out.shuffle_x.detach())
@@ -188,8 +215,17 @@ class EDIM(nn.Module):
             disentangling_information_y_prime=disentangling_information_y_prime,
         )
 
-    def forward_classifier(self, edim_outputs: EDIMOutputs):
+    def forward_classifier(self, edim_outputs: EDIMOutputs) -> ClassifierOutputs:
+        """Forward pass of the classifiers
+
+        Args:
+            edim_outputs (EDIMOutputs): Outputs from the generator
+
+        Returns:
+            ClassifierOutputs: Classifiers Outputs
+        """
         out = edim_outputs
+        # detach because we do not want compute the gradient here
         digit_bg_logits = self.digit_bg_classifier(out.exclusive_x.detach())
         digit_fg_logits = self.digit_fg_classifier(out.exclusive_y.detach())
         color_bg_logits = self.color_bg_classifier(out.exclusive_x.detach())
@@ -201,21 +237,3 @@ class EDIM(nn.Module):
             color_bg_logits=color_bg_logits,
             color_fg_logits=color_fg_logits,
         )
-
-
-if __name__ == "__main__":
-    from torch.utils.data import DataLoader
-
-    # sdim = SDIM(img_size=28, channels=3, shared_dim=10, switched=True)
-    d = ColoredMNISTDataset(train=True)
-    # import matplotlib.pyplot as plt
-
-    # fig, axs = plt.subplots(2)
-    # fig.suptitle("x, y")
-    # axs[0].imshow(d[0].fg.permute(1, 2, 0).numpy())
-    # axs[1].imshow(d[0].bg.permute(1, 2, 0).numpy())
-    # plt.savefig("pair.png")
-
-    train_dataloader = DataLoader(d, batch_size=3, shuffle=True)
-    for elem in train_dataloader:
-        print(elem.bg, elem.fg)

@@ -1,9 +1,26 @@
+import torch
 import torch.nn as nn
 from src.utils.custom_typing import EncoderOutput
 
 
 class BaseEncoder(nn.Module):
-    def __init__(self, img_size, in_channels, num_filters, kernel_size, repr_dim):
+    def __init__(
+        self,
+        img_size: int,
+        in_channels: int,
+        num_filters: int,
+        kernel_size: int,
+        repr_dim: int,
+    ):
+        """Encoder to extract the representations
+
+        Args:
+            img_size (int): [Image size (must be squared size)]
+            in_channels (int): Number of input channels
+            num_filters (int): Intermediate number of filters
+            kernel_size (int): Convolution kernel size
+            repr_dim (int): Dimension of the desired representation
+        """
         super().__init__()
 
         self.conv1 = nn.Conv2d(
@@ -35,7 +52,15 @@ class BaseEncoder(nn.Module):
             out_features=repr_dim,
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.tensor) -> EncoderOutput:
+        """Forward encoder
+
+        Args:
+            x (torch.tensor): Image from a given domain
+
+        Returns:
+            EncoderOutput: Representation and feature map
+        """
         x = self.conv1(x)
         x = self.leaky_relu(x)
         x = self.conv2(x)
@@ -49,18 +74,3 @@ class BaseEncoder(nn.Module):
         representation = self.dense(flatten_x)
 
         return EncoderOutput(representation=representation, feature=feature)
-
-
-if __name__ == "__main__":
-    import torch
-
-    img_size = 28
-    x = torch.zeros((64, 3, img_size, img_size))
-    enc2 = BaseEncoder(
-        img_size=img_size,
-        in_channels=3,
-        num_filters=64,
-        kernel_size=4,
-        repr_dim=64,
-    )
-    print(enc2(x)[1].shape)

@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 from src.losses.loss_functions import (
     DJSLoss,
     ClassifLoss,
@@ -16,12 +17,21 @@ from src.utils.custom_typing import (
 
 
 class EDIMLoss(nn.Module):
+    """Loss function to extract exclusive information from the image, see paper equation (8)
+
+    Args:
+        local_mutual_loss_coeff (float): Coefficient of the local Jensen Shannon loss
+        global_mutual_loss_coeff (float): Coefficient of the global Jensen Shannon loss
+        disentangling_loss_coeff (float): Coefficient of the Gan loss
+    """
+
     def __init__(
         self,
-        local_mutual_loss_coeff,
-        global_mutual_loss_coeff,
-        disentangling_loss_coeff,
+        local_mutual_loss_coeff: float,
+        global_mutual_loss_coeff: float,
+        disentangling_loss_coeff: float,
     ):
+
         super().__init__()
         self.local_mutual_loss_coeff = local_mutual_loss_coeff
         self.global_mutual_loss_coeff = global_mutual_loss_coeff
@@ -32,7 +42,15 @@ class EDIMLoss(nn.Module):
         self.discriminator_loss = DiscriminatorLoss()
         self.generator_loss = GeneratorLoss()
 
-    def compute_generator_loss(self, edim_outputs: EDIMOutputs):
+    def compute_generator_loss(self, edim_outputs: EDIMOutputs) -> GenLosses:
+        """Generator loss function
+
+        Args:
+            edim_outputs (EDIMOutputs): Output of the forward pass of the exclusive information model
+
+        Returns:
+            GenLosses: Generator losses
+        """
 
         # Compute Global mutual loss
         global_mutual_loss_x = self.djs_loss(
@@ -78,7 +96,17 @@ class EDIMLoss(nn.Module):
             gan_loss_g=gan_loss_g,
         )
 
-    def compute_discriminator_loss(self, discr_outputs: DiscriminatorOutputs):
+    def compute_discriminator_loss(
+        self, discr_outputs: DiscriminatorOutputs
+    ) -> DiscrLosses:
+        """Discriminator loss see paper equation (9)
+
+        Args:
+            discr_outputs (DiscriminatorOutputs): Output of the forward pass of the discriminators model
+
+        Returns:
+            DiscrLosses: Discriminator losses
+        """
         gan_loss_x_d = self.discriminator_loss(
             real_logits=discr_outputs.disentangling_information_x_prime,
             fake_logits=discr_outputs.disentangling_information_x,
@@ -95,10 +123,21 @@ class EDIMLoss(nn.Module):
     def compute_classif_loss(
         self,
         classif_outputs: ClassifierOutputs,
-        digit_labels,
-        color_bg_labels,
-        color_fg_labels,
-    ):
+        digit_labels: torch.tensor,
+        color_bg_labels: torch.tensor,
+        color_fg_labels: torch.tensor,
+    ) -> ClassifLosses:
+        """Compute classifiers losses. The accuracy of the classifiers allow to quantify the representations level of disentanglement.
+
+        Args:
+            classif_outputs (ClassifierOutputs): Classifiers Outputs
+            digit_labels (torch.tensor): Label of the digit
+            color_bg_labels (torch.tensor): Background color of the images
+            color_fg_labels (torch.tensor): Foreground color of the images
+
+        Returns:
+            ClassifLosses: Classifiers losses
+        """
 
         digit_bg_classif_loss, digit_bg_accuracy = self.classif_loss(
             y_pred=classif_outputs.digit_bg_logits,
