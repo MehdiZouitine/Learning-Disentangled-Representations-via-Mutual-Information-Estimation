@@ -13,105 +13,105 @@ class EncoderOutput(NamedTuple):
 
 
 class ColoredMNISTData(NamedTuple):
-    fg: torch.tensor
-    bg: torch.tensor
-    fg_label: torch.tensor
-    bg_label: torch.tensor
-    digit_label: torch.tensor
+    fg: torch.Tensor
+    bg: torch.Tensor
+    fg_label: torch.Tensor
+    bg_label: torch.Tensor
+    digit_label: torch.Tensor
 
 
 class SDIMOutputs(NamedTuple):
-    global_mutual_M_R_x: torch.tensor
-    global_mutual_M_R_x_prime: torch.tensor
-    global_mutual_M_R_y: torch.tensor
-    global_mutual_M_R_y_prime: torch.tensor
-    local_mutual_M_R_x: torch.tensor
-    local_mutual_M_R_x_prime: torch.tensor
-    local_mutual_M_R_y: torch.tensor
-    local_mutual_M_R_y_prime: torch.tensor
-    digit_logits: torch.tensor
-    color_bg_logits: torch.tensor
-    color_fg_logits: torch.tensor
-    shared_x: torch.tensor
-    shared_y: torch.tensor
+    global_mutual_M_R_x: torch.Tensor
+    global_mutual_M_R_x_prime: torch.Tensor
+    global_mutual_M_R_y: torch.Tensor
+    global_mutual_M_R_y_prime: torch.Tensor
+    local_mutual_M_R_x: torch.Tensor
+    local_mutual_M_R_x_prime: torch.Tensor
+    local_mutual_M_R_y: torch.Tensor
+    local_mutual_M_R_y_prime: torch.Tensor
+    digit_logits: torch.Tensor
+    color_bg_logits: torch.Tensor
+    color_fg_logits: torch.Tensor
+    shared_x: torch.Tensor
+    shared_y: torch.Tensor
 
 
 class EDIMOutputs(NamedTuple):
-    global_mutual_M_R_x: torch.tensor
-    global_mutual_M_R_x_prime: torch.tensor
-    global_mutual_M_R_y: torch.tensor
-    global_mutual_M_R_y_prime: torch.tensor
-    local_mutual_M_R_x: torch.tensor
-    local_mutual_M_R_x_prime: torch.tensor
-    local_mutual_M_R_y: torch.tensor
-    local_mutual_M_R_y_prime: torch.tensor
-    shared_x: torch.tensor
-    shared_y: torch.tensor
-    fake_x: torch.tensor
-    fake_y: torch.tensor
-    R_y_x: torch.tensor
-    R_x_y: torch.tensor
-    shuffle_x: torch.tensor
-    shuffle_y: torch.tensor
-    exclusive_x: torch.tensor
-    exclusive_y: torch.tensor
+    global_mutual_M_R_x: torch.Tensor
+    global_mutual_M_R_x_prime: torch.Tensor
+    global_mutual_M_R_y: torch.Tensor
+    global_mutual_M_R_y_prime: torch.Tensor
+    local_mutual_M_R_x: torch.Tensor
+    local_mutual_M_R_x_prime: torch.Tensor
+    local_mutual_M_R_y: torch.Tensor
+    local_mutual_M_R_y_prime: torch.Tensor
+    shared_x: torch.Tensor
+    shared_y: torch.Tensor
+    fake_x: torch.Tensor
+    fake_y: torch.Tensor
+    R_y_x: torch.Tensor
+    R_x_y: torch.Tensor
+    shuffle_x: torch.Tensor
+    shuffle_y: torch.Tensor
+    exclusive_x: torch.Tensor
+    exclusive_y: torch.Tensor
 
 
 class SDIMLosses(NamedTuple):
-    total_loss: torch.tensor
-    encoder_loss: torch.tensor
-    local_mutual_loss: torch.tensor
-    global_mutual_loss: torch.tensor
-    shared_loss: torch.tensor
-    digit_classif_loss: torch.tensor
-    color_bg_classif_loss: torch.tensor
-    color_fg_classif_loss: torch.tensor
-    digit_accuracy: torch.tensor
-    color_bg_accuracy: torch.tensor
-    color_fg_accuracy: torch.tensor
+    total_loss: torch.Tensor
+    encoder_loss: torch.Tensor
+    local_mutual_loss: torch.Tensor
+    global_mutual_loss: torch.Tensor
+    shared_loss: torch.Tensor
+    digit_classif_loss: torch.Tensor
+    color_bg_classif_loss: torch.Tensor
+    color_fg_classif_loss: torch.Tensor
+    digit_accuracy: torch.Tensor
+    color_bg_accuracy: torch.Tensor
+    color_fg_accuracy: torch.Tensor
 
 
 class GenLosses(NamedTuple):
-    encoder_loss: torch.tensor
-    local_mutual_loss: torch.tensor
-    global_mutual_loss: torch.tensor
-    gan_loss_g: torch.tensor
+    encoder_loss: torch.Tensor
+    local_mutual_loss: torch.Tensor
+    global_mutual_loss: torch.Tensor
+    gan_loss_g: torch.Tensor
 
 
 class ClassifLosses(NamedTuple):
-    classif_loss: torch.tensor
-    digit_bg_classif_loss: torch.tensor
-    digit_fg_classif_loss: torch.tensor
-    color_bg_classif_loss: torch.tensor
-    color_fg_classif_loss: torch.tensor
-    digit_bg_accuracy: torch.tensor
-    digit_fg_accuracy: torch.tensor
-    color_bg_accuracy: torch.tensor
-    color_fg_accuracy: torch.tensor
+    classif_loss: torch.Tensor
+    digit_bg_classif_loss: torch.Tensor
+    digit_fg_classif_loss: torch.Tensor
+    color_bg_classif_loss: torch.Tensor
+    color_fg_classif_loss: torch.Tensor
+    digit_bg_accuracy: torch.Tensor
+    digit_fg_accuracy: torch.Tensor
+    color_bg_accuracy: torch.Tensor
+    color_fg_accuracy: torch.Tensor
 
 
 class DiscrLosses(NamedTuple):
-    gan_loss_d: torch.tensor
+    gan_loss_d: torch.Tensor
 
 
 class GeneratorOutputs(NamedTuple):
-    real_x: torch.tensor
-    fake_x: torch.tensor
-    real_y: torch.tensor
-    fake_y: torch.tensor
-    exclusive_x: torch.tensor
-    exclusive_y: torch.tensor
+    real_x: torch.Tensor
+    fake_x: torch.Tensor
+    real_y: torch.Tensor
+    fake_y: torch.Tensor
+    exclusive_x: torch.Tensor
+    exclusive_y: torch.Tensor
 
 
 class DiscriminatorOutputs(NamedTuple):
-    disentangling_information_x: torch.tensor
-    disentangling_information_x_prime: torch.tensor
-    disentangling_information_y: torch.tensor
-    disentangling_information_y_prime: torch.tensor
+    disentangling_information_x: torch.Tensor
+    disentangling_information_x_prime: torch.Tensor
+    disentangling_information_y: torch.Tensor
+    disentangling_information_y_prime: torch.Tensor
 
 
 class ClassifierOutputs(NamedTuple):
-    digit_bg_logits: torch.tensor
-    digit_fg_logits: torch.tensor
-    color_bg_logits: torch.tensor
-    color_fg_logits: torch.tensor
+    digit_bg_logits: torch.Tensor
+    digit_fg_logits: torch.Tensor
+    color_bg_logits: torch.Tensor
+    color_fg_logits: torch.Tensor
