@@ -10,6 +10,13 @@ The training is divided into two stages :
 * First, the shared representation is learned via cross mutual information estimation and maximization.
 * Secondly, mutual information maximization is performed to learn the exclusive representation while minimizing the mutual information between the shared and exclusive representations (using an adversarial objective).
 
+## Installation
+```
+git clone https://github.com/MehdiZouitine/spaghetti.git
+cd spaghetti/
+pip install -r requirement.txt
+```
+
 ## Learn shared representation 
 
 To run the first stage of the training, one may use **sdim_trainer.sh**
