@@ -8,7 +8,7 @@ The implementation is done in pytorch on the colored-mnist dataset.
 
 The training is divided into two stages : 
 * First, the shared representation is learned via cross mutual information estimation and maximization.
-* Secondly, mutual information maximization is performed to learn the exclusive representation while minimizing the mutual information between the shared and exclusive representations (using an adversarial objective)
+* Secondly, mutual information maximization is performed to learn the exclusive representation while minimizing the mutual information between the shared and exclusive representations (using an adversarial objective).
 
 ## Learn shared representation 
 
@@ -24,7 +24,7 @@ conf_path="conf/share_conf.yaml"
 
 * xp_name : Mlflow experimentation name.
 
-* conf_path : Path to the training configuration file. To use sdim_trainer.sh the conf file must be shaped like **share_conf.yaml** 
+* conf_path : Path to the training configuration file. To use sdim_trainer.sh the conf file must be shaped like **share_conf.yaml** .
 
 
 ## Learn exclusive representation 
@@ -44,7 +44,7 @@ trained_enc_y_path="mlruns/3/38e65dbd8d1246fab33f079e16510019/artifacts/sh_encod
 
 * xp_name : Mlflow experimentation name.
 
-* conf_path : Path to the training configuration file. To use edim_trainer.sh the conf file must be shaped like **exclusive_conf.yaml** 
+* conf_path : Path to the training configuration file. To use edim_trainer.sh the conf file must be shaped like **exclusive_conf.yaml**.
 
 * trained_enc_x_path : Path the the pretrained encoder of domains X. As you can see encoders are logged in mlflow.
 

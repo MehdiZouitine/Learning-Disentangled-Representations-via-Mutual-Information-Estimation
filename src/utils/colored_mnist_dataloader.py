@@ -3,7 +3,6 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor, Compose, Normalize
 from torch.utils.data import Dataset
 import random
-import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn.functional as F
 from src.utils.custom_typing import ColoredMNISTData
@@ -103,13 +102,3 @@ class ColoredMNISTDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-
-
-if __name__ == "__main__":
-    from tqdm import tqdm
-
-    dataset = ColoredMNISTDataset()
-    for i in tqdm(range(len(dataset))):
-        d = dataset[i]
-        print(d.digit_label, d.bg_label, d.fg_label)
-        a = input()
