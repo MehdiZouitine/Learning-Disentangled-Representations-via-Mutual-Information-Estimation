@@ -10,6 +10,10 @@ The training is divided into two stages :
 * First, the shared representation is learned via cross mutual information estimation and maximization.
 * Secondly, mutual information maximization is performed to learn the exclusive representation while minimizing the mutual information between the shared and exclusive representations (using an adversarial objective).
 
+<p align="center">
+<img  src="https://github.com/MehdiZouitine/spaghetti/blob/master/images/disen.PNG?raw=true" alt="Pipeline">
+</p>
+
 ## Installation
 ```
 git clone https://github.com/MehdiZouitine/spaghetti.git
