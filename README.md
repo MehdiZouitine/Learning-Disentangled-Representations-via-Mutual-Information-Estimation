@@ -1,6 +1,6 @@
 # Spaghetti
 
-**Pytorch** Implementation of **Learning Disentangled Representations via Mutual Information Estimation** ([Arxiv link](https://arxiv.org/abs/1912.03915)) by Eduardo Hugo Sanchez *et al.*
+**Pytorch** Implementation of **Learning Disentangled Representations via Mutual Information Estimation** ([arxiv link](https://arxiv.org/abs/1912.03915)) by Eduardo Hugo Sanchez *et al.*
 
 The implementation is done in pytorch on the colored-mnist dataset.
 
@@ -50,7 +50,7 @@ trained_enc_y_path="mlruns/3/38e65dbd8d1246fab33f079e16510019/artifacts/sh_encod
 
 * trained_enc_y_path : Path the the pretrained encoder of domains Y. As you can see encoders are logged in mlflow.
 
-## Make file
+## Makefile
 
 Once the *sdim_runner.sh* and *edim_runner.sh* file are completed, the user can launch a training session using the Makefile shortcut.
 ```
