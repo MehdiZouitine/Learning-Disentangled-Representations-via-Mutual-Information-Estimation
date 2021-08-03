@@ -20,7 +20,7 @@ The training is divided into two stages :
 ## Installation
 ```
 git clone https://github.com/MehdiZouitine/spaghetti.git
-cd spaghetti/
+cd Learning-Disentangled-Representations-via-Mutual-Information-Estimation/
 pip install -r requirement.txt
 ```
 
