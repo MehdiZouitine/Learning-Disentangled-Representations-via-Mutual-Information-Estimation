@@ -2,7 +2,10 @@
 
 **Pytorch** Implementation of **Learning Disentangled Representations via Mutual Information Estimation** ([arxiv link](https://arxiv.org/abs/1912.03915)) by Eduardo Hugo Sanchez *et al.*
 
-The implementation is done in pytorch on the colored-mnist dataset.
+The implementation is done in pytorch on the **colored-mnist dataset**.
+<p align="center">
+<img  src="https://github.com/MehdiZouitine/spaghetti/blob/master/images/pair.PNG?raw=true" alt="Cmnist">
+</p>
 
 
 
