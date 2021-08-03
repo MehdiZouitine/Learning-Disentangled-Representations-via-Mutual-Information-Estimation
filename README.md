@@ -4,7 +4,7 @@
 
 The implementation is done in pytorch on the **colored-mnist dataset**.
 <p align="center">
-<img  src="https://github.com/MehdiZouitine/spaghetti/blob/master/images/pair.PNG?raw=true" alt="Cmnist">
+<img  src="https://github.com/MehdiZouitine/spaghetti/blob/master/images/pair.png?raw=true" alt="Cmnist">
 </p>
 
 
